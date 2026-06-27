@@ -12,6 +12,7 @@ import { ForgotPassword } from "../pages/auth/ForgotPassword";
 // User Pages
 import { UserDashboard } from "../pages/user/Dashboard";
 import { AssistanceWizard } from "../pages/user/AssistanceWizard";
+import { TrackAssistance } from "../pages/user/TrackAssistance";
 import { UserVehicles } from "../pages/user/Vehicles";
 
 // Garage Pages
@@ -69,6 +70,7 @@ export const AppRoutes = () => {
         >
           <Route path="dashboard" element={<UserDashboard />} />
           <Route path="request" element={<AssistanceWizard />} />
+          <Route path="track" element={<TrackAssistance />} />
           <Route path="vehicles" element={<UserVehicles />} />
           <Route path="" element={<Navigate to="dashboard" replace />} />
         </Route>

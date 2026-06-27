@@ -20,7 +20,8 @@ import {
   Palette,
   Bell,
   Menu,
-  X
+  X,
+  Navigation
 } from "lucide-react";
 
 export const RoleLayout = () => {
@@ -44,6 +45,7 @@ export const RoleLayout = () => {
     user: [
       { name: "Dashboard", path: "/user/dashboard", icon: <LayoutDashboard size={20} /> },
       { name: "Request Help", path: "/user/request", icon: <AlertTriangle size={20} /> },
+      { name: "Track Assistance", path: "/user/track", icon: <Navigation size={20} /> },
       { name: "My Vehicles", path: "/user/vehicles", icon: <Car size={20} /> }
     ],
     garage: [
