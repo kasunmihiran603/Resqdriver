@@ -28,6 +28,7 @@ const seedRequests = () => {
         imageSimulated: true,
         audioSimulated: false,
         status: "on_the_way", // pending, accepted, technician_assigned, on_the_way, repair_in_progress, completed
+        paymentStatus: "unpaid",
         garageId: "grg-1",
         garageName: "Apex Auto Care",
         technician: { id: "tech-1", name: "James R.", phone: "+1 (555) 018-9901" },
@@ -50,6 +51,7 @@ const seedRequests = () => {
         imageSimulated: false,
         audioSimulated: true,
         status: "completed",
+        paymentStatus: "paid",
         garageId: "grg-1",
         garageName: "Apex Auto Care",
         technician: { id: "tech-3", name: "David K.", phone: "+1 (555) 018-9903" },
@@ -72,6 +74,7 @@ const seedRequests = () => {
         imageSimulated: true,
         audioSimulated: true,
         status: "pending",
+        paymentStatus: "unpaid",
         garageId: null,
         towingId: "tow-1",
         towingName: "Rapid Towing & Recovery",
@@ -79,20 +82,71 @@ const seedRequests = () => {
         eta: "Pending Driver Assignment",
         timestamp: new Date(Date.now() - 5 * 60 * 1000).toISOString(), // 5 mins ago
         fee: "$180.00"
+      },
+      {
+        id: "req-4",
+        userId: "usr-1",
+        userName: "Alex Mercer",
+        userPhone: "+1 (555) 019-2834",
+        vehicle: { make: "Tesla", model: "Model S", year: "2022", plate: "E-DRIVE1" },
+        category: "Battery Issue",
+        symptoms: "Dead battery, click click sound on startup.",
+        description: "Battery drained overnight due to cabin overhead light being left on.",
+        location: "555 Oakwood Lane, Suburbs",
+        gps: { lat: 37.7550, lng: -122.4300 },
+        imageSimulated: false,
+        audioSimulated: false,
+        status: "completed",
+        paymentStatus: "unpaid",
+        garageId: "grg-1",
+        garageName: "Apex Auto Care",
+        technician: { id: "tech-1", name: "James R.", phone: "+1 (555) 018-9901" },
+        towingId: null,
+        eta: "Completed",
+        timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
+        fee: "$150.00"
       }
     ];
     localStorage.setItem("vamp-requests", JSON.stringify(defaultRequests));
   }
 };
 
+const seedTransactions = () => {
+  const transactions = localStorage.getItem("vamp-transactions");
+  if (!transactions) {
+    const defaultTransactions = [
+      {
+        id: "TXN-100201",
+        requestId: "req-2",
+        userId: "usr-1",
+        userName: "Alex Mercer",
+        garageId: "grg-1",
+        garageName: "Apex Auto Care",
+        vehicle: "Toyota RAV4 (TR-8923A)",
+        amount: "$85.00",
+        paymentMethod: "Visa ending 4521",
+        status: "Successful",
+        date: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+      }
+    ];
+    localStorage.setItem("vamp-transactions", JSON.stringify(defaultTransactions));
+  }
+};
+
 export const RequestProvider = ({ children }) => {
   const [requests, setRequests] = useState([]);
+  const [transactions, setTransactions] = useState([]);
 
   useEffect(() => {
     seedRequests();
-    const stored = localStorage.getItem("vamp-requests");
-    if (stored) {
-      setRequests(JSON.parse(stored));
+    seedTransactions();
+    const storedReqs = localStorage.getItem("vamp-requests");
+    if (storedReqs) {
+      setRequests(JSON.parse(storedReqs));
+    }
+    const storedTxns = localStorage.getItem("vamp-transactions");
+    if (storedTxns) {
+      setTransactions(JSON.parse(storedTxns));
     }
   }, []);
 
@@ -101,11 +155,17 @@ export const RequestProvider = ({ children }) => {
     localStorage.setItem("vamp-requests", JSON.stringify(newRequests));
   };
 
+  const updateTransactionsStorage = (newTransactions) => {
+    setTransactions(newTransactions);
+    localStorage.setItem("vamp-transactions", JSON.stringify(newTransactions));
+  };
+
   const createRequest = (requestData) => {
     const newRequest = {
       id: `req-${Date.now()}`,
       timestamp: new Date().toISOString(),
       status: "pending",
+      paymentStatus: "unpaid",
       garageId: null,
       technician: null,
       towingId: null,
@@ -142,6 +202,43 @@ export const RequestProvider = ({ children }) => {
     updateLocalStorage(updated);
   };
 
+  const confirmPayment = (requestId, paymentMethod) => {
+    let targetReq = null;
+    const updatedRequests = requests.map((req) => {
+      if (req.id === requestId) {
+        targetReq = { ...req, paymentStatus: "paid" };
+        return targetReq;
+      }
+      return req;
+    });
+
+    if (!targetReq) return null;
+
+    updateLocalStorage(updatedRequests);
+
+    const newTxn = {
+      id: `TXN-${Math.floor(100000 + Math.random() * 900000)}`,
+      requestId: targetReq.id,
+      userId: targetReq.userId,
+      userName: targetReq.userName,
+      garageId: targetReq.garageId,
+      garageName: targetReq.garageName || "VAMP Platform",
+      vehicle: `${targetReq.vehicle.make} ${targetReq.vehicle.model} (${targetReq.vehicle.plate})`,
+      amount: targetReq.fee,
+      paymentMethod: paymentMethod || "Visa ending 4521",
+      status: "Successful",
+      date: new Date().toISOString()
+    };
+
+    const updatedTxns = [newTxn, ...transactions];
+    updateTransactionsStorage(updatedTxns);
+    return newTxn;
+  };
+
+  const withdrawGarageBalance = (garageId) => {
+    return true;
+  };
+
   const getRequestsByRole = (role, id) => {
     if (role === "admin") return requests;
     if (role === "user") return requests.filter((r) => r.userId === id);
@@ -154,8 +251,11 @@ export const RequestProvider = ({ children }) => {
     <RequestContext.Provider
       value={{
         requests,
+        transactions,
         createRequest,
         updateRequestStatus,
+        confirmPayment,
+        withdrawGarageBalance,
         getRequestsByRole
       }}
     >

@@ -17,6 +17,7 @@ import { UserVehicles } from "../pages/user/Vehicles";
 import { UserProfile } from "../pages/user/Profile";
 import { EditProfile } from "../pages/user/EditProfile";
 import { UserSettings } from "../pages/user/Settings";
+import { PaymentBilling } from "../pages/user/PaymentBilling";
 
 // Garage Pages
 import { GarageDashboard } from "../pages/garage/Dashboard";
@@ -78,6 +79,7 @@ export const AppRoutes = () => {
           <Route path="profile" element={<UserProfile />} />
           <Route path="edit-profile" element={<EditProfile />} />
           <Route path="settings" element={<UserSettings />} />
+          <Route path="payments" element={<PaymentBilling />} />
           <Route path="" element={<Navigate to="dashboard" replace />} />
         </Route>
 
