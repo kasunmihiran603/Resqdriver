@@ -38,6 +38,7 @@ const seedUsers = () => {
         address: "1028 Industrial Blvd, Sector 7",
         hours: "08:00 - 20:00",
         coverageRadius: "15 miles",
+        gps: { lat: 37.7749, lng: -122.4194 },
         services: [
           { id: "srv-1", name: "Engine Issue", price: "$120 - $500", desc: "Diagnostic, overheating fix, minor electrical and mechanical repair." },
           { id: "srv-2", name: "Tire Replacement/Fix", price: "$50 - $150", desc: "Flat tire repairs, spares replacement, and pressure calibration." },
