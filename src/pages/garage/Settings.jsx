@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
+import { useCurrency } from "../../context/CurrencyContext";
 import { useToast } from "../../context/ToastContext";
 import { Card, CardHeader, CardTitle, CardContent } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
@@ -34,9 +35,8 @@ export const GarageSettings = () => {
     sms: JSON.parse(localStorage.getItem("vamp-notif-sms") ?? "false")
   });
 
-  const [currency, setCurrency] = useState(
-    localStorage.getItem("vamp-currency") || "USD"
-  );
+  const { currency: globalCurrency, setCurrency: setGlobalCurrency } = useCurrency();
+  const [localCurrency, setLocalCurrency] = useState(globalCurrency);
 
   const toggleNotif = (key) => {
     const next = !notifications[key];
@@ -49,10 +49,9 @@ export const GarageSettings = () => {
     );
   };
 
-  const handleCurrencyChange = (code) => {
-    setCurrency(code);
-    localStorage.setItem("vamp-currency", code);
-    showToast(`Currency set to ${code}.`, "success");
+  const handleSaveCurrency = () => {
+    setGlobalCurrency(localCurrency);
+    showToast(`Currency display set to ${localCurrency} globally.`, "success");
   };
 
   const handleClearData = () => {
@@ -201,26 +200,33 @@ export const GarageSettings = () => {
             {CURRENCIES.map(c => (
               <button
                 key={c.code}
-                onClick={() => handleCurrencyChange(c.code)}
+                onClick={() => setLocalCurrency(c.code)}
                 className={`flex items-center gap-3 p-3.5 rounded-xl border text-left cursor-pointer transition-all ${
-                  currency === c.code
+                  localCurrency === c.code
                     ? "border-primary bg-primary/10"
                     : "border-border bg-muted/20 hover:bg-muted/40 hover:border-border/80"
                 }`}
               >
                 <span className={`text-xl font-black w-8 text-center leading-none ${
-                  currency === c.code ? "text-primary" : "text-muted-foreground"
+                  localCurrency === c.code ? "text-primary" : "text-muted-foreground"
                 }`}>
                   {c.symbol}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className={`text-sm font-bold ${currency === c.code ? "text-primary" : "text-foreground"}`}>{c.code}</p>
+                  <p className={`text-sm font-bold ${localCurrency === c.code ? "text-primary" : "text-foreground"}`}>{c.code}</p>
                   <p className="text-[11px] text-muted-foreground truncate">{c.name}</p>
                 </div>
-                {currency === c.code && <Check size={14} className="text-primary shrink-0" />}
+                {localCurrency === c.code && <Check size={14} className="text-primary shrink-0" />}
               </button>
             ))}
           </div>
+          <Button 
+            className="w-full mt-4 bg-primary hover:bg-primary/95 text-primary-foreground font-bold shadow-md cursor-pointer transition-colors"
+            onClick={handleSaveCurrency}
+            disabled={localCurrency === globalCurrency}
+          >
+            Save Currency
+          </Button>
         </CardContent>
       </Card>
 

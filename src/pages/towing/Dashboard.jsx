@@ -5,6 +5,7 @@ import "leaflet/dist/leaflet.css";
 import { useAuth } from "../../context/AuthContext";
 import { useRequests } from "../../context/RequestContext";
 import { useToast } from "../../context/ToastContext";
+import { useCurrency } from "../../context/CurrencyContext";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import { Modal } from "../../components/ui/Modal";
@@ -71,9 +72,14 @@ export const TowingDashboard = () => {
   const { currentUser } = useAuth();
   const { requests, updateRequestStatus } = useRequests();
   const { showToast } = useToast();
+  const { formatAmount } = useCurrency();
   const navigate = useNavigate();
 
   const [mapModalRequest, setMapModalRequest] = useState(null);
+  const parseFee = (feeStr) => {
+    if (!feeStr) return 0;
+    return parseFloat(feeStr.replace(/[^0-9.]/g, "")) || 0;
+  };
 
   // Filter towing specific requests (category 'Accident' or explicitly assigned)
   const towingJobs = requests.filter((r) => r.towingId === currentUser.id);
@@ -82,7 +88,7 @@ export const TowingDashboard = () => {
   const completedJobs = towingJobs.filter((r) => r.status === "completed");
 
   const totalEarnings = completedJobs.reduce((acc, curr) => {
-    const numeric = parseFloat(curr.fee.replace(/[$,]/g, "")) || 0;
+    const numeric = parseFee(curr.fee);
     return acc + numeric;
   }, 0);
 
@@ -148,7 +154,7 @@ export const TowingDashboard = () => {
           <CardContent className="p-5 flex items-center justify-between">
             <div className="space-y-1">
               <span className="text-[10px] text-muted-foreground font-extrabold uppercase tracking-wider block">Tow Earnings</span>
-              <p className="text-2xl font-black text-foreground">${totalEarnings.toFixed(2)}</p>
+              <p className="text-2xl font-black text-foreground">{formatAmount(totalEarnings)}</p>
               <span className="text-[10px] text-primary font-bold block">Based on flat collision rates</span>
             </div>
             <div className="p-3 bg-primary/10 text-primary rounded-xl">
@@ -251,7 +257,7 @@ export const TowingDashboard = () => {
                       <p className="font-bold text-foreground">{req.userName}</p>
                       <p className="text-[10px] text-muted-foreground">{req.vehicle.make} {req.vehicle.model}</p>
                     </div>
-                    <span className="font-extrabold text-foreground">{req.fee}</span>
+                    <span className="font-extrabold text-foreground">{formatAmount(parseFee(req.fee))}</span>
                   </div>
                   <p className="text-[10px] text-muted-foreground truncate">📍 {req.location}</p>
                 </div>

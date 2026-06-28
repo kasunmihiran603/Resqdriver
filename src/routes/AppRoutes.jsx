@@ -42,6 +42,7 @@ import { AdminDashboard } from "../pages/admin/Dashboard";
 import { AdminUsers } from "../pages/admin/Users";
 import { AdminServices } from "../pages/admin/Services";
 import { AdminSettings } from "../pages/admin/Settings";
+import { AuditDetails } from "../pages/admin/AuditDetails";
 
 // Root Redirect component
 const RootRedirect = () => {
@@ -141,6 +142,7 @@ export const AppRoutes = () => {
           <Route path="users" element={<AdminUsers />} />
           <Route path="services" element={<AdminServices />} />
           <Route path="settings" element={<AdminSettings />} />
+          <Route path="audit/:id" element={<AuditDetails />} />
           <Route path="" element={<Navigate to="dashboard" replace />} />
         </Route>
 
