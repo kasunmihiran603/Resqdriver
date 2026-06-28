@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 import { useAuth } from "../../context/AuthContext";
 import { useRequests } from "../../context/RequestContext";
 import { useToast } from "../../context/ToastContext";
@@ -31,6 +33,67 @@ import {
   Navigation,
   Check
 } from "lucide-react";
+
+import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
+import markerIcon from "leaflet/dist/images/marker-icon.png";
+import markerShadow from "leaflet/dist/images/marker-shadow.png";
+
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconUrl: markerIcon,
+  iconRetinaUrl: markerIcon2x,
+  shadowUrl: markerShadow,
+});
+
+const InteractiveMap = ({ gps, onGpsChange }) => {
+  const mapRef = useRef(null);
+  const leafletMap = useRef(null);
+  const markerRef = useRef(null);
+
+  useEffect(() => {
+    if (!mapRef.current) return;
+
+    if (!leafletMap.current) {
+      const map = L.map(mapRef.current, { zoomControl: true }).setView([gps.lat, gps.lng], 13);
+      
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: "&copy; OpenStreetMap"
+      }).addTo(map);
+
+      const marker = L.marker([gps.lat, gps.lng], { draggable: true }).addTo(map);
+      markerRef.current = marker;
+
+      map.on("click", (e) => {
+        const { lat, lng } = e.latlng;
+        marker.setLatLng([lat, lng]);
+        onGpsChange({ lat, lng });
+      });
+
+      marker.on("dragend", (e) => {
+        const { lat, lng } = e.target.getLatLng();
+        onGpsChange({ lat, lng });
+      });
+
+      leafletMap.current = map;
+    }
+
+    return () => {
+      if (leafletMap.current) {
+        leafletMap.current.remove();
+        leafletMap.current = null;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (leafletMap.current && markerRef.current) {
+      markerRef.current.setLatLng([gps.lat, gps.lng]);
+      leafletMap.current.setView([gps.lat, gps.lng], 14, { animate: true });
+    }
+  }, [gps.lat, gps.lng]);
+
+  return <div ref={mapRef} className="w-full h-full min-h-[220px] rounded-t-xl z-0 relative" />;
+};
 
 export const AssistanceWizard = () => {
   const { currentUser } = useAuth();
@@ -79,6 +142,13 @@ export const AssistanceWizard = () => {
       setSelectedVehicle(currentUser.vehicles[0].id);
     }
   }, [currentUser]);
+
+  // Auto-detect GPS location on reaching dispatch step
+  useEffect(() => {
+    if (step === 4) {
+      handleGetCurrentLocation();
+    }
+  }, [step]);
 
   // Categories config
   const categories = [
@@ -181,6 +251,24 @@ export const AssistanceWizard = () => {
     }
   };
 
+  const handleGetCurrentLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          setGpsSim({ lat, lng });
+          showToast("Live GPS location acquired successfully!", "success");
+        },
+        (error) => {
+          showToast("Unable to retrieve GPS location. Please allow location permissions in your browser.", "error");
+        }
+      );
+    } else {
+      showToast("Geolocation is not supported by your browser.", "error");
+    }
+  };
+
   // Image upload simulator
   const simulateImageUpload = (e) => {
     const files = e.target.files;
@@ -190,7 +278,6 @@ export const AssistanceWizard = () => {
     }
   };
 
-  // Submit emergency assistance request
   const handleSubmitRequest = () => {
     if (!currentUser?.vehicles?.length) {
       showToast("Please register a vehicle first before requesting assistance.", "error");
@@ -198,12 +285,11 @@ export const AssistanceWizard = () => {
       return;
     }
 
-    const vehicleObj = currentUser.vehicles.find((v) => v.id === selectedVehicle) || currentUser.vehicles[0];
+    const vehicleObj = currentUser.vehicles?.find((v) => v.id === selectedVehicle) || currentUser.vehicles?.[0];
 
-    if (!locationName.trim()) {
-      showToast("Please enter your current location description.", "error");
-      return;
-    }
+    const finalLocation = locationName.trim()
+      ? locationName.trim()
+      : `GPS Pin Location (${gpsSim.lat.toFixed(4)}, ${gpsSim.lng.toFixed(4)})`;
 
     const payload = {
       userId: currentUser.id,
@@ -218,7 +304,7 @@ export const AssistanceWizard = () => {
       category,
       symptoms: selectedSymptoms.join(", "),
       description: description || "No additional description entered.",
-      location: locationName,
+      location: finalLocation,
       gps: gpsSim,
       imageSimulated: uploadedImages.length > 0,
       audioSimulated: hasVoiceNote
@@ -543,35 +629,27 @@ export const AssistanceWizard = () => {
                 </div>
 
               </div>
-
             </div>
 
             {/* GPS Map Location Selector (Right side) */}
             <div className="space-y-4">
               <div className="flex flex-col gap-1.5 text-left">
-                <label className="text-sm font-semibold text-foreground">Emergency GPS Coordinates</label>
-                
-                {/* Mock Map Image UI */}
-                <div className="border border-border rounded-xl h-56 relative overflow-hidden bg-sky-100 dark:bg-slate-900 border-b-0 rounded-b-none flex flex-col justify-center items-center text-center">
-                  <div className="absolute inset-0 opacity-30 bg-cover bg-center pointer-events-none" style={{ backgroundImage: "url('/maps-bg.png')" }} />
-                  {/* Grid Lines simulation */}
-                  <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]" />
-                  
-                  {/* Pin Indicator */}
-                  <motion.div
-                    animate={{ y: [0, -6, 0] }}
-                    transition={{ repeat: Infinity, duration: 1.5 }}
-                    className="z-10 text-rose-500 drop-shadow-md cursor-pointer flex flex-col items-center"
-                    onClick={() => {
-                      setGpsSim({ lat: 37.7749 + Math.random() * 0.01, lng: -122.4194 + Math.random() * 0.01 });
-                      showToast("GPS updated by tapping map.", "info");
-                    }}
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-semibold text-foreground">Emergency GPS Coordinates</label>
+                  <button
+                    type="button"
+                    onClick={handleGetCurrentLocation}
+                    className="text-xs text-primary font-bold hover:underline flex items-center gap-1 cursor-pointer"
                   >
-                    <MapPin size={36} fill="currentColor" className="text-rose-500" />
-                    <span className="bg-card text-foreground text-[8px] font-extrabold px-1 py-0.5 rounded shadow-sm border mt-1">LOCK PIN</span>
-                  </motion.div>
+                    <Compass size={14} /> Detect Live Location
+                  </button>
+                </div>
+                
+                {/* Interactive Leaflet Map UI */}
+                <div className="border border-border rounded-xl h-56 relative overflow-hidden bg-card border-b-0 rounded-b-none flex flex-col justify-center items-center text-center">
+                  <InteractiveMap gps={gpsSim} onGpsChange={setGpsSim} />
 
-                  <div className="absolute bottom-2 left-2 right-2 bg-card/90 backdrop-blur-xs p-1.5 rounded-lg border border-border/60 text-[9px] font-bold text-center z-10">
+                  <div className="absolute bottom-2 left-2 right-2 bg-card/90 backdrop-blur-xs p-1.5 rounded-lg border border-border/60 text-[9px] font-bold text-center z-10 pointer-events-none shadow-md">
                     LAT: {gpsSim.lat.toFixed(5)}, LNG: {gpsSim.lng.toFixed(5)}
                   </div>
                 </div>

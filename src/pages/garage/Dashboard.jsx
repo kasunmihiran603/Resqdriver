@@ -40,7 +40,7 @@ export const GarageDashboard = () => {
 
   // Filter requests that belong to this garage, or are pending in general (available to accept)
   const garageRequests = requests.filter((r) => r.garageId === currentUser.id);
-  const pendingQueue = requests.filter((r) => r.status === "pending" && !r.garageId && !r.towingId);
+  const pendingQueue = requests.filter((r) => r.status === "pending" && !r.garageId && !r.isTowingRequest);
   const activeJobs = garageRequests.filter((r) => r.status !== "completed" && r.status !== "pending");
   const completedJobs = garageRequests.filter((r) => r.status === "completed");
 
