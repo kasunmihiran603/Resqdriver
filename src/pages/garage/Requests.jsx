@@ -91,13 +91,9 @@ export const GarageRequests = () => {
   const garageGps = currentUser.gps || { lat: 37.7749, lng: -122.4194 };
   const maxRadiusKm = parseCoverageRadiusKm(currentUser.coverageRadius);
 
-  // Categorize requests (unclaimed filtered strictly by coverage radius)
+  // Categorize requests (unclaimed garage emergency requests)
   const unclaimed = requests.filter((r) => {
-    if (r.status !== "pending" || r.garageId || r.towingId) return false;
-    if (r.gps && r.gps.lat && r.gps.lng) {
-      const dist = calculateDistanceKm(garageGps.lat, garageGps.lng, r.gps.lat, r.gps.lng);
-      return dist <= maxRadiusKm;
-    }
+    if (r.status !== "pending" || r.garageId || r.isTowingRequest) return false;
     return true;
   });
   const active = requests.filter((r) => r.garageId === currentUser.id && r.status !== "completed");

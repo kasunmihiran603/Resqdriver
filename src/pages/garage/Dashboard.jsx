@@ -40,7 +40,7 @@ export const GarageDashboard = () => {
 
   // Filter requests that belong to this garage, or are pending in general (available to accept)
   const garageRequests = requests.filter((r) => r.garageId === currentUser.id);
-  const pendingQueue = requests.filter((r) => r.status === "pending" && !r.garageId && !r.towingId);
+  const pendingQueue = requests.filter((r) => r.status === "pending" && !r.garageId && !r.isTowingRequest);
   const activeJobs = garageRequests.filter((r) => r.status !== "completed" && r.status !== "pending");
   const completedJobs = garageRequests.filter((r) => r.status === "completed");
 
@@ -70,6 +70,15 @@ export const GarageDashboard = () => {
   });
 
   const availableBalance = Math.max(0, garageEarnings - withdrawnTotal);
+
+  const handleClaimJob = (reqId) => {
+    updateRequestStatus(reqId, "accepted", {
+      garageId: currentUser.id,
+      garageName: currentUser.name
+    });
+    showToast("Incident claimed! Navigating to active shop orders...", "success");
+    navigate("/garage/requests");
+  };
 
   const handleWithdraw = () => {
     if (availableBalance <= 0) {
@@ -302,7 +311,7 @@ export const GarageDashboard = () => {
                       📍 {req.location} • Vehicle: {req.vehicle.make} {req.vehicle.model}
                     </p>
                   </div>
-                  <Button size="sm" onClick={() => navigate("/garage/requests")} className="h-8 text-xs px-3">
+                  <Button size="sm" onClick={() => handleClaimJob(req.id)} className="h-8 text-xs px-3">
                     Claim Job
                   </Button>
                 </div>
