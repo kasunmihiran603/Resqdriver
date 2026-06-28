@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useRequests } from "../../context/RequestContext";
@@ -13,7 +13,10 @@ import {
   AlertOctagon,
   Clock,
   CheckCircle2,
-  Navigation
+  Navigation,
+  Star,
+  Download,
+  CreditCard
 } from "lucide-react";
 
 export const UserDashboard = () => {
@@ -24,6 +27,14 @@ export const UserDashboard = () => {
   const userRequests = getRequestsByRole("user", currentUser?.id);
   const activeRequests = userRequests.filter((r) => r.status !== "completed");
   const completedRequests = userRequests.filter((r) => r.status === "completed");
+  const unpaidCompletedRequests = completedRequests.filter((r) => r.paymentStatus === "unpaid");
+  
+  const [ratings, setRatings] = useState({});
+
+  const handleRate = (reqId, stars) => {
+    setRatings((prev) => ({ ...prev, [reqId]: stars }));
+    localStorage.setItem(`vamp-rating-${reqId}`, stars);
+  };
 
   const quickActions = [
     {
@@ -122,6 +133,93 @@ export const UserDashboard = () => {
                 </CardContent>
               </Card>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Service Completed & Awaiting Payment Card */}
+      {unpaidCompletedRequests.length > 0 && (
+        <div className="space-y-3">
+          <h3 className="text-sm font-bold uppercase tracking-wider text-primary flex items-center gap-2">
+            <CheckCircle2 size={16} className="text-primary animate-pulse" />
+            Service Clearings Awaiting Payment
+          </h3>
+          <div className="grid gap-4">
+            {unpaidCompletedRequests.map((req) => {
+              const currentRating = ratings[req.id] || parseInt(localStorage.getItem(`vamp-rating-${req.id}`) || "0");
+              return (
+                <Card key={req.id} className="border-primary/30 bg-primary/[0.01] relative overflow-hidden">
+                  <CardContent className="p-5 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                    <div className="space-y-2 text-left flex-1">
+                      <div className="flex items-center gap-3">
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase border bg-primary/10 text-primary border-primary/20">
+                          Pending Settlement
+                        </span>
+                        <span className="text-xs text-muted-foreground">ID: {req.id}</span>
+                      </div>
+                      <h4 className="text-base font-bold text-foreground">
+                        {req.category} — Completed by {req.garageName}
+                      </h4>
+                      <p className="text-xs text-muted-foreground">
+                        Vehicle: <span className="font-semibold text-foreground">{req.vehicle.make} {req.vehicle.model} ({req.vehicle.plate})</span>
+                      </p>
+                      
+                      {/* Interactive 5-Star Rating */}
+                      <div className="flex items-center gap-2 pt-1.5">
+                        <span className="text-xs font-semibold text-muted-foreground">Rate Garage:</span>
+                        <div className="flex items-center gap-0.5">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <button
+                              key={star}
+                              type="button"
+                              onClick={() => handleRate(req.id, star)}
+                              className="focus:outline-hidden hover:scale-110 transition-transform cursor-pointer"
+                            >
+                              <Star
+                                size={18}
+                                className={
+                                  star <= currentRating
+                                    ? "fill-amber-500 text-amber-500"
+                                    : "text-muted-foreground/60 hover:text-amber-500"
+                                }
+                              />
+                            </button>
+                          ))}
+                        </div>
+                        {currentRating > 0 && (
+                          <span className="text-[10px] text-amber-500 font-bold bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/15">
+                            Thank you!
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="flex flex-wrap gap-2.5 shrink-0">
+                      <Button
+                        onClick={() => {
+                          const link = document.createElement("a");
+                          link.href = "#";
+                          const toast = document.createElement("div");
+                          alert(`Downloading Invoice for request ${req.id}...`);
+                        }}
+                        variant="outline"
+                        size="sm"
+                        className="flex items-center gap-1 text-xs"
+                      >
+                        <Download size={14} /> Invoice
+                      </Button>
+                      <Button
+                        onClick={() => navigate("/user/payments")}
+                        size="sm"
+                        className="flex items-center gap-1.5 text-xs bg-primary hover:bg-primary/95 text-primary-foreground font-bold shadow-md shadow-primary/10"
+                      >
+                        <CreditCard size={14} /> Pay Now ({req.fee})
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         </div>
       )}
