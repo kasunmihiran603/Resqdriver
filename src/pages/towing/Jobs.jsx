@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 import { useAuth } from "../../context/AuthContext";
 import { useRequests } from "../../context/RequestContext";
 import { useToast } from "../../context/ToastContext";
@@ -8,6 +10,63 @@ import { Input } from "../../components/ui/Input";
 import { Modal } from "../../components/ui/Modal";
 import { Truck, MapPin, Phone, Clock, Navigation, Compass, AlertCircle, Check } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+
+import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
+import markerIcon from "leaflet/dist/images/marker-icon.png";
+import markerShadow from "leaflet/dist/images/marker-shadow.png";
+
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconUrl: markerIcon,
+  iconRetinaUrl: markerIcon2x,
+  shadowUrl: markerShadow,
+});
+
+const TowingRouteMap = ({ pickupGps, dropoffGps, pickupLabel, dropoffLabel }) => {
+  const mapRef = useRef(null);
+  const leafletMap = useRef(null);
+
+  useEffect(() => {
+    if (!mapRef.current) return;
+
+    const pGps = pickupGps || { lat: 37.7749, lng: -122.4194 };
+    const dGps = dropoffGps || { lat: 37.7845, lng: -122.4012 };
+
+    const map = L.map(mapRef.current, { zoomControl: true }).setView([pGps.lat, pGps.lng], 13);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "&copy; OpenStreetMap"
+    }).addTo(map);
+
+    const markerA = L.marker([pGps.lat, pGps.lng]).addTo(map);
+    markerA.bindPopup(`<b>Pickup Location (A)</b><br/>${pickupLabel || ""}`).openPopup();
+
+    const markerB = L.marker([dGps.lat, dGps.lng]).addTo(map);
+    markerB.bindPopup(`<b>Dropoff Destination (B)</b><br/>${dropoffLabel || ""}`);
+
+    try {
+      const bounds = L.latLngBounds([pGps.lat, pGps.lng], [dGps.lat, dGps.lng]);
+      map.fitBounds(bounds, { padding: [40, 40] });
+    } catch (e) {
+      // ignore fit bounds if identical
+    }
+
+    const timer = setTimeout(() => {
+      if (map) map.invalidateSize();
+    }, 250);
+
+    leafletMap.current = map;
+
+    return () => {
+      clearTimeout(timer);
+      if (leafletMap.current) {
+        leafletMap.current.remove();
+        leafletMap.current = null;
+      }
+    };
+  }, [pickupGps, dropoffGps, pickupLabel, dropoffLabel]);
+
+  return <div ref={mapRef} className="w-full h-full min-h-[300px] rounded-xl border border-border overflow-hidden z-0 relative" />;
+};
 
 export const TowingJobs = () => {
   const { currentUser } = useAuth();
@@ -93,7 +152,7 @@ export const TowingJobs = () => {
                   <div className="relative pt-2">
                     <span className="absolute -left-6 top-2.5 w-4.5 h-4.5 rounded-full bg-emerald-500 border-2 border-background flex items-center justify-center text-white text-[8px] font-bold">B</span>
                     <p className="text-[10px] text-muted-foreground font-bold uppercase">Destination Dropoff</p>
-                    <p className="font-bold text-foreground text-sm leading-relaxed">Apex Auto Care (1028 Industrial Blvd)</p>
+                    <p className="font-bold text-foreground text-sm leading-relaxed">{activeJob.destination || "Apex Auto Care (1028 Industrial Blvd)"}</p>
                   </div>
                 </div>
 
@@ -181,25 +240,20 @@ export const TowingJobs = () => {
           {/* Maps tracking interface (Right side) */}
           <div className="space-y-6">
             
-            {/* Visual map route indicator */}
+            {/* Interactive Towing Route Map */}
             <Card className="border-border/80 overflow-hidden h-72 relative flex flex-col justify-center items-center">
-              <div className="absolute inset-0 opacity-20 bg-cover bg-center pointer-events-none" style={{ backgroundImage: "url('/maps-bg.png')" }} />
-              <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]" />
-              
-              {/* Pulse and compass */}
-              <div className="relative flex items-center justify-center z-10">
-                <span className="absolute inline-flex h-24 w-24 rounded-full bg-rose-500/10 animate-ping opacity-60" />
-                <span className="absolute inline-flex h-14 w-14 rounded-full bg-rose-500/20 animate-pulse" />
-                <div className="w-10 h-10 rounded-full bg-rose-500 text-white flex items-center justify-center shadow-lg border-2 border-background">
-                  <Compass size={16} className="animate-spin-slow" />
-                </div>
-              </div>
+              <TowingRouteMap
+                pickupGps={activeJob.gps}
+                dropoffGps={activeJob.destinationGps}
+                pickupLabel={activeJob.location}
+                dropoffLabel={activeJob.destination || "Destination"}
+              />
 
-              <div className="absolute bottom-2 left-2 right-2 bg-card/90 backdrop-blur-xs p-2 rounded-lg border border-border/60 text-[10px] font-bold text-center z-10 space-y-0.5">
-                <p className="text-foreground">GPS Route Navigation locking active</p>
+              <div className="absolute bottom-2 left-2 right-2 bg-card/90 backdrop-blur-xs p-2 rounded-lg border border-border/60 text-[10px] font-bold text-center z-10 pointer-events-none shadow-md space-y-0.5">
+                <p className="text-foreground font-semibold">Live GPS Route Lock Active</p>
                 {activeJob.status === "on_the_way" && (
-                  <p className="text-primary uppercase tracking-wider text-[8px] font-extrabold">
-                    Distance to Pickup: {distanceSim} miles
+                  <p className="text-primary uppercase tracking-wider text-[9px] font-black">
+                    Est. Distance to Pickup: {distanceSim} miles
                   </p>
                 )}
               </div>

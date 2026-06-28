@@ -1,4 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 import { useAuth } from "../../context/AuthContext";
 import { useRequests } from "../../context/RequestContext";
 import { useToast } from "../../context/ToastContext";
@@ -7,7 +9,71 @@ import { Button } from "../../components/ui/Button";
 import { Modal } from "../../components/ui/Modal";
 import { Select } from "../../components/ui/Select";
 import { Input } from "../../components/ui/Input";
-import { Wrench, Phone, Clipboard, CheckCircle, Navigation, MapPin } from "lucide-react";
+import { Wrench, Phone, Clipboard, CheckCircle, Navigation, MapPin, Compass, Eye } from "lucide-react";
+
+import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
+import markerIcon from "leaflet/dist/images/marker-icon.png";
+import markerShadow from "leaflet/dist/images/marker-shadow.png";
+
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconUrl: markerIcon,
+  iconRetinaUrl: markerIcon2x,
+  shadowUrl: markerShadow,
+});
+
+const calculateDistanceKm = (lat1, lon1, lat2, lon2) => {
+  if (!lat1 || !lon1 || !lat2 || !lon2) return 0;
+  const R = 6371;
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLon = (lon2 - lon1) * (Math.PI / 180);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * (Math.PI / 180)) *
+      Math.cos(lat2 * (Math.PI / 180)) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+};
+
+const parseCoverageRadiusKm = (radiusStr) => {
+  if (!radiusStr) return 50;
+  const match = radiusStr.match(/(\d+(\.\d+)?)/);
+  const val = match ? parseFloat(match[1]) : 50;
+  if (radiusStr.toLowerCase().includes("mile")) {
+    return val * 1.60934;
+  }
+  return val;
+};
+
+const PreviewMap = ({ gps, label }) => {
+  const mapRef = useRef(null);
+  const leafletMap = useRef(null);
+
+  useEffect(() => {
+    if (!mapRef.current || !gps) return;
+    const map = L.map(mapRef.current, { zoomControl: true }).setView([gps.lat, gps.lng], 14);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "&copy; OpenStreetMap"
+    }).addTo(map);
+
+    const marker = L.marker([gps.lat, gps.lng]).addTo(map);
+    if (label) {
+      marker.bindPopup(`<b>${label}</b>`).openPopup();
+    }
+    leafletMap.current = map;
+
+    return () => {
+      if (leafletMap.current) {
+        leafletMap.current.remove();
+        leafletMap.current = null;
+      }
+    };
+  }, [gps, label]);
+
+  return <div ref={mapRef} className="w-full h-64 rounded-xl border border-border overflow-hidden z-0" />;
+};
 
 export const GarageRequests = () => {
   const { currentUser } = useAuth();
@@ -16,13 +82,24 @@ export const GarageRequests = () => {
 
   const [activeTab, setActiveTab] = useState("all"); // all, unclaimed, active, completed
   const [selectedRequest, setSelectedRequest] = useState(null);
+  const [mapModalRequest, setMapModalRequest] = useState(null);
   const [isAssignOpen, setIsAssignOpen] = useState(false);
   const [isStatusOpen, setIsStatusOpen] = useState(false);
   const [selectedTechId, setSelectedTechId] = useState("");
   const [customEta, setCustomEta] = useState("");
 
-  // Categorize requests
-  const unclaimed = requests.filter((r) => r.status === "pending" && !r.garageId && !r.towingId);
+  const garageGps = currentUser.gps || { lat: 37.7749, lng: -122.4194 };
+  const maxRadiusKm = parseCoverageRadiusKm(currentUser.coverageRadius);
+
+  // Categorize requests (unclaimed filtered strictly by coverage radius)
+  const unclaimed = requests.filter((r) => {
+    if (r.status !== "pending" || r.garageId || r.towingId) return false;
+    if (r.gps && r.gps.lat && r.gps.lng) {
+      const dist = calculateDistanceKm(garageGps.lat, garageGps.lng, r.gps.lat, r.gps.lng);
+      return dist <= maxRadiusKm;
+    }
+    return true;
+  });
   const active = requests.filter((r) => r.garageId === currentUser.id && r.status !== "completed");
   const completed = requests.filter((r) => r.garageId === currentUser.id && r.status === "completed");
 
@@ -132,26 +209,43 @@ export const GarageRequests = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0 divide-y divide-border/60">
-              {unclaimed.map((req) => (
-                <div key={req.id} className="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  <div className="space-y-1.5 flex-1">
-                    <div className="flex items-center gap-3">
-                      <span className="text-[10px] bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 px-1.5 py-0.5 rounded font-black uppercase">
-                        Pending
-                      </span>
-                      <span className="text-[10px] text-muted-foreground font-semibold">Incident ID: {req.id}</span>
+              {unclaimed.map((req) => {
+                const distKm = (req.gps && req.gps.lat) ? calculateDistanceKm(garageGps.lat, garageGps.lng, req.gps.lat, req.gps.lng) : null;
+                return (
+                  <div key={req.id} className="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="space-y-1.5 flex-1">
+                      <div className="flex items-center gap-3">
+                        <span className="text-[10px] bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 px-1.5 py-0.5 rounded font-black uppercase">
+                          Pending
+                        </span>
+                        {distKm !== null && (
+                          <span className="text-[10px] bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 px-1.5 py-0.5 rounded font-bold">
+                            📍 {distKm.toFixed(1)} km away
+                          </span>
+                        )}
+                        <span className="text-[10px] text-muted-foreground font-semibold">Incident ID: {req.id}</span>
+                      </div>
+                      <h4 className="font-extrabold text-foreground text-sm">{req.category} — {req.vehicle.make} {req.vehicle.model}</h4>
+                      <p className="text-xs text-muted-foreground/90 max-w-2xl">{req.description}</p>
+                      <div className="flex items-center gap-3 text-xs">
+                        <span className="text-foreground font-semibold flex items-center gap-1">
+                          <MapPin size={13} className="text-muted-foreground" /> {req.location}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setMapModalRequest(req)}
+                          className="text-primary font-bold hover:underline flex items-center gap-1 cursor-pointer text-[11px]"
+                        >
+                          <Eye size={12} /> Preview Map
+                        </button>
+                      </div>
                     </div>
-                    <h4 className="font-extrabold text-foreground text-sm">{req.category} — {req.vehicle.make} {req.vehicle.model}</h4>
-                    <p className="text-xs text-muted-foreground/90 max-w-2xl">{req.description}</p>
-                    <p className="text-xs text-foreground font-semibold flex items-center gap-1">
-                      <MapPin size={13} className="text-muted-foreground" /> {req.location}
-                    </p>
+                    <Button onClick={() => handleClaim(req.id)} size="sm" className="shrink-0">
+                      Accept & Schedule
+                    </Button>
                   </div>
-                  <Button onClick={() => handleClaim(req.id)} size="sm" className="shrink-0">
-                    Accept & Schedule
-                  </Button>
-                </div>
-              ))}
+                );
+              })}
             </CardContent>
           </Card>
         )}
@@ -208,6 +302,9 @@ export const GarageRequests = () => {
                             <td className="p-4 font-semibold text-foreground">{req.eta}</td>
                             <td className="p-4 text-center">
                               <div className="flex items-center justify-center gap-2">
+                                <Button size="sm" variant="outline" className="h-8 text-xs px-2" onClick={() => setMapModalRequest(req)}>
+                                  <Eye size={12} className="mr-1" /> Map
+                                </Button>
                                 <Button size="sm" variant="outline" className="h-8 text-xs px-2.5" onClick={() => handleOpenStatus(req)}>
                                   Set Status
                                 </Button>
@@ -234,10 +331,14 @@ export const GarageRequests = () => {
                         </div>
                         <div className="text-xs text-muted-foreground bg-muted/30 p-3 rounded-lg border">
                           <p>🛠️ **Category:** {req.category}</p>
+                          <p className="mt-1">📍 **Location:** {req.location}</p>
                           <p className="mt-1">👤 **Tech:** {req.technician?.name || "Unassigned"}</p>
                           <p className="mt-1">⏱️ **ETA:** {req.eta}</p>
                         </div>
                         <div className="flex gap-2">
+                          <Button size="sm" variant="outline" className="text-xs h-9 px-2" onClick={() => setMapModalRequest(req)}>
+                            <Eye size={12} className="mr-1" /> View Map
+                          </Button>
                           {!req.technician ? (
                             <Button size="sm" className="flex-1 text-xs h-9 px-3" onClick={() => handleOpenAssign(req)}>
                               Assign Tech
@@ -388,6 +489,39 @@ export const GarageRequests = () => {
               <Button variant="ghost" onClick={() => setIsStatusOpen(false)}>
                 Cancel
               </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* USER LOCATION MAP PREVIEW MODAL */}
+      <Modal
+        isOpen={!!mapModalRequest}
+        onClose={() => setMapModalRequest(null)}
+        title={`Customer GPS Location Map Preview`}
+        size="lg"
+      >
+        {mapModalRequest && (
+          <div className="space-y-4 text-left">
+            <div className="p-3 bg-muted/40 rounded-xl border border-border/60 text-xs space-y-1">
+              <p className="font-bold text-foreground">Customer: {mapModalRequest.userName} ({mapModalRequest.userPhone})</p>
+              <p className="text-muted-foreground">Vehicle: {mapModalRequest.vehicle.make} {mapModalRequest.vehicle.model} ({mapModalRequest.vehicle.plate})</p>
+              <p className="text-muted-foreground">Address/Landmark: <strong className="text-foreground">{mapModalRequest.location}</strong></p>
+              {mapModalRequest.gps && (
+                <p className="text-primary font-mono text-[11px]">Exact GPS Coordinates: {mapModalRequest.gps.lat.toFixed(5)}, {mapModalRequest.gps.lng.toFixed(5)}</p>
+              )}
+            </div>
+
+            {mapModalRequest.gps ? (
+              <PreviewMap gps={mapModalRequest.gps} label={`${mapModalRequest.userName} - ${mapModalRequest.category}`} />
+            ) : (
+              <div className="p-8 text-center text-xs text-muted-foreground bg-muted/20 rounded-xl border">
+                No GPS map coordinates attached to this request.
+              </div>
+            )}
+
+            <div className="flex justify-end pt-2">
+              <Button onClick={() => setMapModalRequest(null)}>Close Preview</Button>
             </div>
           </div>
         )}
