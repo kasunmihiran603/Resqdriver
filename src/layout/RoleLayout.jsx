@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import { useToast } from "../context/ToastContext";
+import { useRequests } from "../context/RequestContext";
 import {
   LayoutDashboard,
   Car,
@@ -32,8 +33,12 @@ export const RoleLayout = () => {
   const { currentUser, logout } = useAuth();
   const { theme, setTheme, accentColor, setAccentColor } = useTheme();
   const { showToast } = useToast();
+  const { notifications, markAllNotificationsRead } = useRequests();
   const location = useLocation();
   const navigate = useNavigate();
+
+  const userNotifs = notifications.filter((n) => n.userId === currentUser?.id);
+  const unreadCount = userNotifs.filter((n) => !n.read).length;
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showAccentMenu, setShowAccentMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -60,8 +65,7 @@ export const RoleLayout = () => {
       { name: "Request Queue", path: "/garage/requests", icon: <Wrench size={20} /> },
       { name: "Technicians", path: "/garage/technicians", icon: <Users size={20} /> },
       { name: "Our Services", path: "/garage/services", icon: <Settings size={20} /> },
-      { name: "Service Records", path: "/garage/history", icon: <History size={20} /> },
-      { name: "Garage Profile", path: "/garage/profile", icon: <Car size={20} /> }
+      { name: "Service Records", path: "/garage/history", icon: <History size={20} /> }
     ],
     towing: [
       { name: "Dashboard", path: "/towing/dashboard", icon: <LayoutDashboard size={20} /> },
@@ -141,18 +145,22 @@ export const RoleLayout = () => {
                   className="absolute bottom-full left-4 right-4 mb-2 bg-card border border-border rounded-xl shadow-xl z-20 overflow-hidden"
                 >
                   <div className="p-1.5 space-y-0.5">
-                    <button
-                      onClick={() => { navigate(`/${currentUser?.role}/profile`); setShowUserMenu(false); }}
-                      className="flex items-center gap-3 px-3 h-10 rounded-lg text-sm font-semibold text-foreground hover:bg-muted w-full transition-colors cursor-pointer"
-                    >
-                      <User size={16} className="text-muted-foreground" /> View Profile
-                    </button>
-                    <button
-                      onClick={() => { navigate(`/${currentUser?.role}/edit-profile`); setShowUserMenu(false); }}
-                      className="flex items-center gap-3 px-3 h-10 rounded-lg text-sm font-semibold text-foreground hover:bg-muted w-full transition-colors cursor-pointer"
-                    >
-                      <Edit3 size={16} className="text-muted-foreground" /> Edit Profile
-                    </button>
+                    {currentUser?.role !== "admin" && (
+                      <>
+                        <button
+                          onClick={() => { navigate(`/${currentUser?.role}/profile`); setShowUserMenu(false); }}
+                          className="flex items-center gap-3 px-3 h-10 rounded-lg text-sm font-semibold text-foreground hover:bg-muted w-full transition-colors cursor-pointer"
+                        >
+                          <User size={16} className="text-muted-foreground" /> View Profile
+                        </button>
+                        <button
+                          onClick={() => { navigate(`/${currentUser?.role}/edit-profile`); setShowUserMenu(false); }}
+                          className="flex items-center gap-3 px-3 h-10 rounded-lg text-sm font-semibold text-foreground hover:bg-muted w-full transition-colors cursor-pointer"
+                        >
+                          <Edit3 size={16} className="text-muted-foreground" /> Edit Profile
+                        </button>
+                      </>
+                    )}
                     <button
                       onClick={() => { navigate(`/${currentUser?.role}/settings`); setShowUserMenu(false); }}
                       className="flex items-center gap-3 px-3 h-10 rounded-lg text-sm font-semibold text-foreground hover:bg-muted w-full transition-colors cursor-pointer"
@@ -281,11 +289,20 @@ export const RoleLayout = () => {
             {/* Notification Menu */}
             <div className="relative">
               <button
-                onClick={() => setShowNotifications(!showNotifications)}
+                onClick={() => {
+                  setShowNotifications(!showNotifications);
+                  if (!showNotifications && unreadCount > 0) {
+                    markAllNotificationsRead(currentUser?.id);
+                  }
+                }}
                 className="w-9 h-9 flex items-center justify-center hover:bg-muted text-muted-foreground hover:text-foreground rounded-lg cursor-pointer transition-colors relative"
               >
                 <Bell size={18} />
-                <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-primary animate-pulse" />
+                {unreadCount > 0 && (
+                  <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-primary text-primary-foreground text-[9px] font-black flex items-center justify-center">
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </span>
+                )}
               </button>
               <AnimatePresence>
                 {showNotifications && (
@@ -299,14 +316,29 @@ export const RoleLayout = () => {
                     >
                       <div className="p-3 border-b border-border flex justify-between items-center bg-muted/10">
                         <span className="font-bold">Notifications</span>
-                        <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-bold">1 New</span>
+                        {unreadCount > 0 && (
+                          <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-bold">{unreadCount} New</span>
+                        )}
                       </div>
-                      <div className="divide-y divide-border/60 max-h-60 overflow-y-auto">
-                        <div className="p-3 hover:bg-muted/30 transition-colors">
-                          <p className="font-bold text-xs text-foreground">Welcome to VAMP Platform</p>
-                          <p className="text-[11px] text-muted-foreground/90 mt-0.5">Explore emergency wizards, diagnostic tools, and dashboards built for you.</p>
-                          <span className="text-[9px] text-muted-foreground mt-1 block">Just now</span>
-                        </div>
+                      <div className="divide-y divide-border/60 max-h-72 overflow-y-auto">
+                        {userNotifs.length > 0 ? (
+                          userNotifs.map((notif) => (
+                            <div key={notif.id} className={`p-3 transition-colors ${notif.read ? "hover:bg-muted/20" : "bg-primary/[0.03] hover:bg-primary/[0.06]"}`}>
+                              {!notif.read && <span className="inline-block w-1.5 h-1.5 rounded-full bg-primary mb-1" />}
+                              <p className="font-bold text-xs text-foreground">{notif.title}</p>
+                              <p className="text-[11px] text-muted-foreground/90 mt-0.5 leading-relaxed">{notif.message}</p>
+                              <span className="text-[9px] text-muted-foreground mt-1 block">
+                                {new Date(notif.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                              </span>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="p-3 hover:bg-muted/30 transition-colors">
+                            <p className="font-bold text-xs text-foreground">Welcome to VAMP Platform</p>
+                            <p className="text-[11px] text-muted-foreground/90 mt-0.5">Explore emergency wizards, diagnostic tools, and dashboards built for you.</p>
+                            <span className="text-[9px] text-muted-foreground mt-1 block">Just now</span>
+                          </div>
+                        )}
                       </div>
                     </motion.div>
                   </>
@@ -341,18 +373,22 @@ export const RoleLayout = () => {
                         <p className="text-[10px] text-muted-foreground truncate">{currentUser?.email}</p>
                       </div>
                       <div className="space-y-0.5">
-                        <button
-                          onClick={() => { navigate(`/${currentUser?.role}/profile`); setShowProfileMenu(false); }}
-                          className="flex items-center gap-2.5 px-3 py-2 w-full text-left rounded-lg text-foreground hover:bg-muted cursor-pointer font-semibold transition-colors"
-                        >
-                          <User size={14} className="text-muted-foreground" /> View Profile
-                        </button>
-                        <button
-                          onClick={() => { navigate(`/${currentUser?.role}/edit-profile`); setShowProfileMenu(false); }}
-                          className="flex items-center gap-2.5 px-3 py-2 w-full text-left rounded-lg text-foreground hover:bg-muted cursor-pointer font-semibold transition-colors"
-                        >
-                          <Edit3 size={14} className="text-muted-foreground" /> Edit Profile
-                        </button>
+                        {currentUser?.role !== "admin" && (
+                          <>
+                            <button
+                              onClick={() => { navigate(`/${currentUser?.role}/profile`); setShowProfileMenu(false); }}
+                              className="flex items-center gap-2.5 px-3 py-2 w-full text-left rounded-lg text-foreground hover:bg-muted cursor-pointer font-semibold transition-colors"
+                            >
+                              <User size={14} className="text-muted-foreground" /> View Profile
+                            </button>
+                            <button
+                              onClick={() => { navigate(`/${currentUser?.role}/edit-profile`); setShowProfileMenu(false); }}
+                              className="flex items-center gap-2.5 px-3 py-2 w-full text-left rounded-lg text-foreground hover:bg-muted cursor-pointer font-semibold transition-colors"
+                            >
+                              <Edit3 size={14} className="text-muted-foreground" /> Edit Profile
+                            </button>
+                          </>
+                        )}
                         <button
                           onClick={() => { navigate(`/${currentUser?.role}/settings`); setShowProfileMenu(false); }}
                           className="flex items-center gap-2.5 px-3 py-2 w-full text-left rounded-lg text-foreground hover:bg-muted cursor-pointer font-semibold transition-colors"

@@ -1,6 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 import { useAuth } from "../../context/AuthContext";
 import { useRequests } from "../../context/RequestContext";
 import { useToast } from "../../context/ToastContext";
@@ -10,8 +12,19 @@ import { Input } from "../../components/ui/Input";
 import {
   Truck, AlertTriangle, Car, MapPin, FileText, CheckCircle,
   ChevronRight, ChevronLeft, Wrench, Zap, Waves, ParkingCircle,
-  HelpCircle, ArrowRight, Plus
+  HelpCircle, ArrowRight, Plus, Compass
 } from "lucide-react";
+
+import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
+import markerIcon from "leaflet/dist/images/marker-icon.png";
+import markerShadow from "leaflet/dist/images/marker-shadow.png";
+
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconUrl: markerIcon,
+  iconRetinaUrl: markerIcon2x,
+  shadowUrl: markerShadow,
+});
 
 const INCIDENT_TYPES = [
   { id: "Accident", label: "Accident / Collision", icon: <AlertTriangle size={22} />, color: "text-rose-500", bg: "bg-rose-500/10 border-rose-500/30", desc: "Vehicle involved in a collision or crash" },
@@ -38,6 +51,71 @@ const stepVariants = {
 
 const EMPTY_VEHICLE = { make: "", model: "", year: "", plate: "", insurance: "" };
 
+const InteractiveDualMap = ({ pickupGps, dropoffGps, onPickupChange, onDropoffChange, activeTab }) => {
+  const mapRef = useRef(null);
+  const leafletMap = useRef(null);
+  const pickupMarkerRef = useRef(null);
+  const dropoffMarkerRef = useRef(null);
+
+  useEffect(() => {
+    if (!mapRef.current) return;
+
+    const map = L.map(mapRef.current, { zoomControl: true }).setView([pickupGps.lat, pickupGps.lng], 13);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "&copy; OpenStreetMap"
+    }).addTo(map);
+
+    const pickupMarker = L.marker([pickupGps.lat, pickupGps.lng], { draggable: true }).addTo(map);
+    pickupMarker.bindPopup("<b>Pickup Location (A)</b>");
+    pickupMarkerRef.current = pickupMarker;
+
+    const dropoffMarker = L.marker([dropoffGps.lat, dropoffGps.lng], { draggable: true }).addTo(map);
+    dropoffMarker.bindPopup("<b>Dropoff Destination (B)</b>");
+    dropoffMarkerRef.current = dropoffMarker;
+
+    map.on("click", (e) => {
+      const { lat, lng } = e.latlng;
+      if (activeTab === "pickup") {
+        pickupMarker.setLatLng([lat, lng]);
+        onPickupChange({ lat, lng });
+      } else {
+        dropoffMarker.setLatLng([lat, lng]);
+        onDropoffChange({ lat, lng });
+      }
+    });
+
+    pickupMarker.on("dragend", (e) => {
+      const { lat, lng } = e.target.getLatLng();
+      onPickupChange({ lat, lng });
+    });
+
+    dropoffMarker.on("dragend", (e) => {
+      const { lat, lng } = e.target.getLatLng();
+      onDropoffChange({ lat, lng });
+    });
+
+    leafletMap.current = map;
+
+    return () => {
+      if (leafletMap.current) {
+        leafletMap.current.remove();
+        leafletMap.current = null;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (leafletMap.current) {
+      if (pickupMarkerRef.current) pickupMarkerRef.current.setLatLng([pickupGps.lat, pickupGps.lng]);
+      if (dropoffMarkerRef.current) dropoffMarkerRef.current.setLatLng([dropoffGps.lat, dropoffGps.lng]);
+      const targetGps = activeTab === "pickup" ? pickupGps : dropoffGps;
+      leafletMap.current.setView([targetGps.lat, targetGps.lng], 14, { animate: true });
+    }
+  }, [pickupGps, dropoffGps, activeTab]);
+
+  return <div ref={mapRef} className="w-full h-64 rounded-xl border border-border overflow-hidden z-0 relative" />;
+};
+
 export const UserTowingRequest = () => {
   const { currentUser } = useAuth();
   const { createRequest } = useRequests();
@@ -59,7 +137,36 @@ export const UserTowingRequest = () => {
   const [pickup, setPickup] = useState("");
   const [dropoff, setDropoff] = useState("");
 
+  const [pickupGps, setPickupGps] = useState({ lat: 37.7749, lng: -122.4194 });
+  const [dropoffGps, setDropoffGps] = useState({ lat: 37.7779, lng: -122.4164 });
+  const [activeMapTab, setActiveMapTab] = useState("pickup"); // "pickup" or "dropoff"
+
   const [notes, setNotes] = useState("");
+
+  const handlePickupChange = (newGps) => {
+    setPickupGps(newGps);
+    // Auto-position destination marker nearby in the same neighborhood
+    setDropoffGps({ lat: newGps.lat + 0.003, lng: newGps.lng + 0.003 });
+  };
+
+  const handleGetLivePickup = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          const newPickup = { lat, lng };
+          setPickupGps(newPickup);
+          setDropoffGps({ lat: lat + 0.003, lng: lng + 0.003 });
+          setActiveMapTab("pickup");
+          showToast("Acquired live pickup location!", "success");
+        },
+        () => {
+          showToast("Could not get live location. Enable location permissions.", "error");
+        }
+      );
+    }
+  };
 
   const go = (next) => {
     setDirection(next > step ? 1 : -1);
@@ -78,13 +185,22 @@ export const UserTowingRequest = () => {
       const v = getSelectedVehicle();
       return !!(v.make?.trim() && v.model?.trim() && v.plate?.trim());
     }
-    if (step === 3) return !!(pickup.trim() && dropoff.trim());
+    if (step === 3) return true; // Locations step always proceedable via GPS
     return true;
   };
 
   const handleSubmit = () => {
     setSubmitting(true);
     const v = getSelectedVehicle();
+
+    const finalPickup = pickup.trim()
+      ? pickup.trim()
+      : `GPS Pickup (${pickupGps.lat.toFixed(4)}, ${pickupGps.lng.toFixed(4)})`;
+
+    const finalDropoff = dropoff.trim()
+      ? dropoff.trim()
+      : `GPS Dropoff (${dropoffGps.lat.toFixed(4)}, ${dropoffGps.lng.toFixed(4)})`;
+
     setTimeout(() => {
       createRequest({
         userId: currentUser.id,
@@ -94,12 +210,15 @@ export const UserTowingRequest = () => {
         category: incidentType,
         isTowingRequest: true,
         description: notes || "No additional notes.",
-        location: pickup,
-        destination: dropoff,
+        location: finalPickup,
+        destination: finalDropoff,
+        gps: pickupGps,
+        destinationGps: dropoffGps,
         status: "pending",
         towingId: null,
         garageId: null,
-        eta: "Searching for tow truck..."
+        eta: "Searching for tow truck...",
+        fee: "$180.00"
       });
       showToast("Towing request submitted! A driver will be assigned shortly.", "success");
       setSubmitting(false);
@@ -324,36 +443,75 @@ export const UserTowingRequest = () => {
                     <div className="relative">
                       <span className="absolute -left-8 top-0.5 w-5 h-5 rounded-full bg-rose-500 border-2 border-background flex items-center justify-center text-white text-[9px] font-black">A</span>
                       <Input
-                        label="Your current location (pickup) *"
+                        label="Your current location (pickup) (Optional manual description)"
                         value={pickup}
                         onChange={e => setPickup(e.target.value)}
-                        placeholder="Street address or landmark"
+                        placeholder={`e.g. Exit 44 or GPS (${pickupGps.lat.toFixed(4)}, ${pickupGps.lng.toFixed(4)})`}
                       />
                     </div>
                     <div className="relative">
                       <span className="absolute -left-8 top-0.5 w-5 h-5 rounded-full bg-emerald-500 border-2 border-background flex items-center justify-center text-white text-[9px] font-black">B</span>
                       <Input
-                        label="Tow destination *"
+                        label="Tow destination (Optional manual description)"
                         value={dropoff}
                         onChange={e => setDropoff(e.target.value)}
-                        placeholder="Nearest garage, home, or preferred location"
+                        placeholder={`e.g. Apex Garage or GPS (${dropoffGps.lat.toFixed(4)}, ${dropoffGps.lng.toFixed(4)})`}
                       />
                     </div>
                   </div>
 
-                  {pickup && dropoff && (
-                    <div className="flex items-center gap-3 p-3.5 bg-muted/20 border border-border/50 rounded-xl text-xs">
-                      <div className="p-2 bg-primary/10 rounded-lg text-primary shrink-0">
-                        <Truck size={16} />
+                  {/* Interactive Map Selector */}
+                  <div className="space-y-2 pt-2">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex gap-2 text-xs font-bold">
+                        <button
+                          type="button"
+                          onClick={() => setActiveMapTab("pickup")}
+                          className={`px-3 py-1.5 rounded-lg border cursor-pointer transition-colors ${activeMapTab === "pickup" ? "bg-rose-500 text-white border-rose-500 font-extrabold" : "bg-card border-border text-muted-foreground hover:bg-muted/40"}`}
+                        >
+                          📍 Set Pickup (Pin A)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setActiveMapTab("dropoff")}
+                          className={`px-3 py-1.5 rounded-lg border cursor-pointer transition-colors ${activeMapTab === "dropoff" ? "bg-emerald-600 text-white border-emerald-600 font-extrabold" : "bg-card border-border text-muted-foreground hover:bg-muted/40"}`}
+                        >
+                          🎯 Set Destination (Pin B)
+                        </button>
                       </div>
-                      <div>
-                        <p className="font-bold text-foreground">Route confirmed</p>
-                        <p className="text-muted-foreground mt-0.5">
-                          {pickup} <ArrowRight size={10} className="inline mx-1" /> {dropoff}
-                        </p>
-                      </div>
+                      <button
+                        type="button"
+                        onClick={handleGetLivePickup}
+                        className="text-xs text-primary font-bold hover:underline flex items-center gap-1 cursor-pointer"
+                      >
+                        <Compass size={14} /> Detect Live Location
+                      </button>
                     </div>
-                  )}
+
+                    <InteractiveDualMap
+                      pickupGps={pickupGps}
+                      dropoffGps={dropoffGps}
+                      onPickupChange={handlePickupChange}
+                      onDropoffChange={setDropoffGps}
+                      activeTab={activeMapTab}
+                    />
+                    <div className="text-[10px] text-muted-foreground flex justify-between px-1 font-mono">
+                      <span>A (Pickup): {pickupGps.lat.toFixed(4)}, {pickupGps.lng.toFixed(4)}</span>
+                      <span>B (Destination): {dropoffGps.lat.toFixed(4)}, {dropoffGps.lng.toFixed(4)}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 p-3.5 bg-muted/20 border border-border/50 rounded-xl text-xs">
+                    <div className="p-2 bg-primary/10 rounded-lg text-primary shrink-0">
+                      <Truck size={16} />
+                    </div>
+                    <div>
+                      <p className="font-bold text-foreground">Route Coordinates Confirmed</p>
+                      <p className="text-muted-foreground mt-0.5">
+                        {pickup || `GPS A`} <ArrowRight size={10} className="inline mx-1" /> {dropoff || `GPS B`}
+                      </p>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             )}
