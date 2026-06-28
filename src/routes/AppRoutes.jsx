@@ -33,6 +33,9 @@ import { GarageSettings } from "../pages/garage/Settings";
 // Towing Pages
 import { TowingDashboard } from "../pages/towing/Dashboard";
 import { TowingJobs } from "../pages/towing/Jobs";
+import { TowingProfile } from "../pages/towing/Profile";
+import { TowingEditProfile } from "../pages/towing/EditProfile";
+import { TowingSettings } from "../pages/towing/Settings";
 
 // Admin Pages
 import { AdminDashboard } from "../pages/admin/Dashboard";
@@ -118,6 +121,9 @@ export const AppRoutes = () => {
         >
           <Route path="dashboard" element={<TowingDashboard />} />
           <Route path="jobs" element={<TowingJobs />} />
+          <Route path="profile" element={<TowingProfile />} />
+          <Route path="edit-profile" element={<TowingEditProfile />} />
+          <Route path="settings" element={<TowingSettings />} />
           <Route path="" element={<Navigate to="dashboard" replace />} />
         </Route>
 

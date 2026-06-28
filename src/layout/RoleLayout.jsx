@@ -60,12 +60,12 @@ export const RoleLayout = () => {
       { name: "Request Queue", path: "/garage/requests", icon: <Wrench size={20} /> },
       { name: "Technicians", path: "/garage/technicians", icon: <Users size={20} /> },
       { name: "Our Services", path: "/garage/services", icon: <Settings size={20} /> },
-      { name: "Service Records", path: "/garage/history", icon: <History size={20} /> },
-      { name: "Garage Profile", path: "/garage/profile", icon: <Car size={20} /> }
+      { name: "Service Records", path: "/garage/history", icon: <History size={20} /> }
     ],
     towing: [
       { name: "Dashboard", path: "/towing/dashboard", icon: <LayoutDashboard size={20} /> },
-      { name: "My Tow Jobs", path: "/towing/jobs", icon: <Truck size={20} /> }
+      { name: "My Tow Jobs", path: "/towing/jobs", icon: <Truck size={20} /> },
+      { name: "Profile", path: "/towing/profile", icon: <User size={20} /> }
     ],
     admin: [
       { name: "Overview", path: "/admin/dashboard", icon: <LayoutDashboard size={20} /> },
