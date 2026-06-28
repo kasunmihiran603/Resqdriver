@@ -4,9 +4,9 @@ import { motion } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
 import { Card, CardHeader, CardTitle, CardContent } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
-import { Wrench, Phone, MapPin, Clock, Award, Edit3, Shield } from "lucide-react";
+import { ArrowLeft, Wrench, Phone, MapPin, Clock, Award, Edit3, Shield } from "lucide-react";
 
-export const GarageProfile = () => {
+export const GarageViewProfile = () => {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
 
@@ -18,12 +18,20 @@ export const GarageProfile = () => {
     >
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-black text-foreground">Garage Profile</h2>
-          <p className="text-sm text-muted-foreground mt-0.5">Your business information and verified details</p>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => navigate("/garage/profile")}
+            className="w-9 h-9 rounded-lg border border-border bg-card hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ArrowLeft size={18} />
+          </button>
+          <div>
+            <h2 className="text-2xl font-black text-foreground">View Profile</h2>
+            <p className="text-sm text-muted-foreground mt-0.5">Your garage business information</p>
+          </div>
         </div>
         <Button onClick={() => navigate("/garage/edit-profile")} className="flex items-center gap-2">
-          <Edit3 size={15} />
+          <Edit3 size={16} />
           Edit Profile
         </Button>
       </div>
