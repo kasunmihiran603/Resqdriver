@@ -89,7 +89,7 @@ const TowTrackCard = ({ req, onCancel, focused }) => {
           </div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          {!["repair_in_progress", "completed"].includes(req.status) && (
+          {req.status !== "completed" && (
             <Button variant="destructive" size="sm" onClick={() => onCancel(req.id)}>
               Cancel
             </Button>

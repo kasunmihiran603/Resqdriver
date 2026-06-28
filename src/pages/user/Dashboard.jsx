@@ -16,7 +16,8 @@ import {
   Navigation,
   Star,
   Download,
-  CreditCard
+  CreditCard,
+  Truck
 } from "lucide-react";
 
 export const UserDashboard = () => {
@@ -89,10 +90,16 @@ export const UserDashboard = () => {
           <h2 className="text-2xl font-extrabold text-foreground tracking-tight">Hello, {currentUser?.name}!</h2>
           <p className="text-sm text-muted-foreground mt-1">Need help on the road? Launch an emergency request wizard immediately.</p>
         </div>
-        <Button onClick={() => navigate("/user/request")} className="shrink-0 flex items-center gap-2">
-          <AlertTriangle size={18} className="animate-bounce" />
-          Request Emergency Help
-        </Button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button onClick={() => navigate("/user/request")} className="shrink-0 flex items-center gap-2">
+            <AlertTriangle size={18} className="animate-bounce" />
+            Request Emergency Help
+          </Button>
+          <Button onClick={() => navigate("/user/tow-request")} variant="outline" className="shrink-0 flex items-center gap-2">
+            <Truck size={18} />
+            Request a Tow
+          </Button>
+        </div>
       </div>
 
       {/* 2. Active Requests Highlight */}

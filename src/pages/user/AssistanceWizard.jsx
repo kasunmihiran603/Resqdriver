@@ -192,8 +192,14 @@ export const AssistanceWizard = () => {
 
   // Submit emergency assistance request
   const handleSubmitRequest = () => {
+    if (!currentUser?.vehicles?.length) {
+      showToast("Please register a vehicle first before requesting assistance.", "error");
+      navigate("/user/vehicles");
+      return;
+    }
+
     const vehicleObj = currentUser.vehicles.find((v) => v.id === selectedVehicle) || currentUser.vehicles[0];
-    
+
     if (!locationName.trim()) {
       showToast("Please enter your current location description.", "error");
       return;

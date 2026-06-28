@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../..
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { Modal } from "../../components/ui/Modal";
-import { Truck, MapPin, Phone, Clock, Navigation, Compass, AlertCircle, Check } from "lucide-react";
+import { Truck, MapPin, Phone, Clock, Navigation, Compass, AlertCircle, Check, Radio } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 export const TowingJobs = () => {
@@ -17,7 +17,23 @@ export const TowingJobs = () => {
 
   const towingJobs = requests.filter((r) => r.towingId === currentUser.id);
   const activeJob = towingJobs.find((r) => r.status !== "completed");
+  const unclaimedTows = requests.filter(
+    (r) => r.status === "pending" && !r.towingId && (r.isTowingRequest || r.category === "Accident")
+  );
   const [customEta, setCustomEta] = useState("");
+
+  const handleAcceptTow = (reqId) => {
+    if (activeJob) {
+      showToast("Complete your active tow job before accepting another.", "error");
+      return;
+    }
+    updateRequestStatus(reqId, "accepted", {
+      towingId: currentUser.id,
+      towingName: currentUser.name,
+      eta: "18 mins"
+    });
+    showToast("Tow job accepted! Controls are ready below.", "success");
+  };
 
   const handleUpdateStatus = (status, msg) => {
     const fields = {};
@@ -62,6 +78,57 @@ export const TowingJobs = () => {
         <p className="text-sm text-muted-foreground mt-0.5">Manage active recovery coordinates and towing transit updates.</p>
       </div>
 
+      {/* Available tow requests section — always visible if any exist */}
+      {unclaimedTows.length > 0 && (
+        <Card className="border-amber-500/30 bg-amber-500/[0.02]">
+          <CardHeader className="pb-3 border-b border-amber-500/20">
+            <div className="flex items-center gap-2">
+              <Radio size={16} className="text-amber-500 animate-pulse" />
+              <CardTitle className="text-base font-bold">Available Tow Requests</CardTitle>
+              <span className="text-xs text-amber-500 font-bold bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full">
+                {unclaimedTows.length} nearby
+              </span>
+            </div>
+          </CardHeader>
+          <CardContent className="p-0 divide-y divide-border/60">
+            {unclaimedTows.map((req) => (
+              <div key={req.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-muted/10 transition-colors">
+                <div className="space-y-1 text-left">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[9px] font-black uppercase text-amber-500 bg-amber-500/10 border border-amber-500/25 px-1.5 py-0.5 rounded">
+                      {req.category}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground">ID: {req.id}</span>
+                  </div>
+                  <h4 className="font-extrabold text-sm text-foreground">
+                    {req.vehicle.make} {req.vehicle.model} {req.vehicle.year && `(${req.vehicle.year})`}
+                  </h4>
+                  <p className="text-xs text-foreground font-semibold flex items-center gap-1">
+                    <MapPin size={12} className="text-muted-foreground shrink-0" /> {req.location}
+                  </p>
+                  {req.destination && (
+                    <p className="text-xs text-muted-foreground">
+                      Drop-off: <span className="font-semibold text-foreground">{req.destination}</span>
+                    </p>
+                  )}
+                  {req.description && req.description !== "No additional notes." && (
+                    <p className="text-[11px] text-muted-foreground/80 italic truncate max-w-sm">"{req.description}"</p>
+                  )}
+                </div>
+                <Button
+                  onClick={() => handleAcceptTow(req.id)}
+                  size="sm"
+                  className="shrink-0 h-9 text-xs px-4"
+                  disabled={!!activeJob}
+                >
+                  Accept Tow
+                </Button>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
       {activeJob ? (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
@@ -93,7 +160,7 @@ export const TowingJobs = () => {
                   <div className="relative pt-2">
                     <span className="absolute -left-6 top-2.5 w-4.5 h-4.5 rounded-full bg-emerald-500 border-2 border-background flex items-center justify-center text-white text-[8px] font-bold">B</span>
                     <p className="text-[10px] text-muted-foreground font-bold uppercase">Destination Dropoff</p>
-                    <p className="font-bold text-foreground text-sm leading-relaxed">Apex Auto Care (1028 Industrial Blvd)</p>
+                    <p className="font-bold text-foreground text-sm leading-relaxed">{activeJob.destination || "Destination not specified"}</p>
                   </div>
                 </div>
 
