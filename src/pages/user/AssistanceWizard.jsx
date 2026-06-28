@@ -279,8 +279,14 @@ export const AssistanceWizard = () => {
   };
 
   const handleSubmitRequest = () => {
-    const vehicleObj = currentUser.vehicles?.find((v) => v.id === selectedVehicle) || currentUser.vehicles?.[0] || { make: "Tesla", model: "Model S", year: "2023", plate: "MOCK-PLT" };
-    
+    if (!currentUser?.vehicles?.length) {
+      showToast("Please register a vehicle first before requesting assistance.", "error");
+      navigate("/user/vehicles");
+      return;
+    }
+
+    const vehicleObj = currentUser.vehicles?.find((v) => v.id === selectedVehicle) || currentUser.vehicles?.[0];
+
     const finalLocation = locationName.trim()
       ? locationName.trim()
       : `GPS Pin Location (${gpsSim.lat.toFixed(4)}, ${gpsSim.lng.toFixed(4)})`;
