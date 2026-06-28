@@ -224,27 +224,42 @@ export const PaymentBilling = () => {
             <CardContent className="p-5 space-y-6">
               
               {/* Payment Methods GRID */}
+              {/* To replace placeholder URLs, update the `externalUrl` field in the config below */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                 {[
-                  "Credit Card",
-                  "Debit Card",
-                  "PayPal",
-                  "Apple Pay",
-                  "Google Pay",
-                  "Bank Transfer",
-                  "Cash Payment"
-                ].map((method) => (
+                  { label: "Credit Card" },
+                  { label: "Debit Card" },
+                  {
+                    label: "PayPal",
+                    externalUrl: "https://www.paypal.com",        // 🔁 Replace with your PayPal gateway URL
+                  },
+                  {
+                    label: "Apple Pay",
+                    externalUrl: "https://www.apple.com/apple-pay/", // 🔁 Replace with your Apple Pay gateway URL
+                  },
+                  {
+                    label: "Google Pay",
+                    externalUrl: "https://pay.google.com",        // 🔁 Replace with your Google Pay gateway URL
+                  },
+                  { label: "Bank Transfer" },
+                  { label: "Cash Payment" },
+                ].map(({ label, externalUrl }) => (
                   <button
-                    key={method}
+                    key={label}
                     type="button"
-                    onClick={() => setSelectedMethod(method)}
+                    onClick={() => {
+                      setSelectedMethod(label);
+                      if (externalUrl) {
+                        window.open(externalUrl, "_blank", "noopener,noreferrer");
+                      }
+                    }}
                     className={`p-3 rounded-xl border text-xs font-bold text-center transition-all ${
-                      selectedMethod === method
+                      selectedMethod === label
                         ? "bg-primary/10 border-primary text-primary shadow-xs"
                         : "bg-muted/30 border-border/60 hover:bg-muted/50 hover:border-border/100 text-muted-foreground"
                     }`}
                   >
-                    {method}
+                    {label}
                   </button>
                 ))}
               </div>
