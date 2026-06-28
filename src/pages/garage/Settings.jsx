@@ -7,7 +7,7 @@ import { useCurrency } from "../../context/CurrencyContext";
 import { useToast } from "../../context/ToastContext";
 import { Card, CardHeader, CardTitle, CardContent } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
-import { Bell, Sun, Moon, Monitor, Palette, DollarSign, Trash2, UserX, Check } from "lucide-react";
+import { ArrowLeft, Bell, Sun, Moon, Monitor, Palette, DollarSign, Trash2, UserX, Check } from "lucide-react";
 
 const CURRENCIES = [
   { code: "USD", symbol: "$", name: "US Dollar" },
@@ -23,7 +23,7 @@ const ACCENT_COLORS = [
   { name: "rose", class: "bg-rose-600", label: "Rose" }
 ];
 
-export const UserSettings = () => {
+export const GarageSettings = () => {
   const { currentUser, logout } = useAuth();
   const { theme, setTheme, accentColor, setAccentColor } = useTheme();
   const { showToast } = useToast();
@@ -78,9 +78,18 @@ export const UserSettings = () => {
       animate={{ opacity: 1, y: 0 }}
       className="space-y-6 max-w-2xl mx-auto"
     >
-      <div>
-        <h2 className="text-2xl font-black text-foreground">Settings</h2>
-        <p className="text-sm text-muted-foreground mt-0.5">Manage your preferences and account options</p>
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        <button
+          onClick={() => navigate("/garage/profile")}
+          className="w-9 h-9 rounded-lg border border-border bg-card hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ArrowLeft size={18} />
+        </button>
+        <div>
+          <h2 className="text-2xl font-black text-foreground">Settings</h2>
+          <p className="text-sm text-muted-foreground mt-0.5">Manage your preferences and account options</p>
+        </div>
       </div>
 
       {/* Notifications */}
@@ -229,7 +238,6 @@ export const UserSettings = () => {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          {/* Clear Data */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-amber-500/5 border border-amber-500/20 rounded-xl">
             <div>
               <p className="text-sm font-bold text-foreground">Clear Local Data</p>
@@ -247,7 +255,6 @@ export const UserSettings = () => {
             </Button>
           </div>
 
-          {/* Delete Account */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-destructive/5 border border-destructive/20 rounded-xl">
             <div>
               <p className="text-sm font-bold text-foreground">Delete Account</p>

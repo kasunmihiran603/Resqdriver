@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useRequests } from "../../context/RequestContext";
 import { useToast } from "../../context/ToastContext";
+import { useCurrency } from "../../context/CurrencyContext";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import {
@@ -36,7 +37,13 @@ export const GarageDashboard = () => {
   const { currentUser } = useAuth();
   const { requests, transactions, withdrawGarageBalance } = useRequests();
   const { showToast } = useToast();
+  const { formatAmount } = useCurrency();
   const navigate = useNavigate();
+
+  const parseFee = (feeStr) => {
+    if (!feeStr) return 0;
+    return parseFloat(feeStr.replace(/[^0-9.]/g, "")) || 0;
+  };
 
   // Filter requests that belong to this garage, or are pending in general (available to accept)
   const garageRequests = requests.filter((r) => r.garageId === currentUser.id);
@@ -49,19 +56,19 @@ export const GarageDashboard = () => {
 
   // Sum revenue
   const totalRevenue = completedJobs.reduce((acc, curr) => {
-    const numeric = parseFloat(curr.fee.replace(/[$,]/g, "")) || 0;
+    const numeric = parseFee(curr.fee);
     return acc + numeric;
   }, 0);
 
   // Sum earned revenue (completed and paid)
   const garageEarnings = paidJobs.reduce((acc, curr) => {
-    const numeric = parseFloat(curr.fee.replace(/[$,]/g, "")) || 0;
+    const numeric = parseFee(curr.fee);
     return acc + numeric;
   }, 0);
 
   // Sum pending payments (completed and unpaid)
   const pendingCustomerPayments = unpaidJobs.reduce((acc, curr) => {
-    const numeric = parseFloat(curr.fee.replace(/[$,]/g, "")) || 0;
+    const numeric = parseFee(curr.fee);
     return acc + numeric;
   }, 0);
 
@@ -80,7 +87,7 @@ export const GarageDashboard = () => {
     const newWithdrawn = withdrawnTotal + availableBalance;
     setWithdrawnTotal(newWithdrawn);
     localStorage.setItem(`vamp-garage-withdrawn-${currentUser.id}`, newWithdrawn.toString());
-    showToast(`Withdrawal of $${availableBalance.toFixed(2)} completed to your bank.`, "success");
+    showToast(`Withdrawal of ${formatAmount(availableBalance)} completed to your bank.`, "success");
   };
 
   // Filter transactions for this garage
@@ -175,7 +182,7 @@ export const GarageDashboard = () => {
           <CardContent className="p-5 flex items-center justify-between">
             <div className="space-y-1">
               <span className="text-[10px] text-muted-foreground font-extrabold uppercase tracking-wider block">Estimated Earnings</span>
-              <p className="text-2xl font-black text-foreground">${totalRevenue.toFixed(2)}</p>
+              <p className="text-2xl font-black text-foreground">{formatAmount(totalRevenue)}</p>
               <span className="text-[10px] text-primary font-bold block">Based on base service fees</span>
             </div>
             <div className="p-3 bg-primary/10 text-primary rounded-xl">
@@ -327,7 +334,7 @@ export const GarageDashboard = () => {
             <CardContent className="p-5 flex items-center justify-between">
               <div className="space-y-1">
                 <span className="text-[10px] text-muted-foreground font-extrabold uppercase tracking-wider block">Total Earnings</span>
-                <p className="text-2xl font-black text-foreground">${garageEarnings.toFixed(2)}</p>
+                <p className="text-2xl font-black text-foreground">{formatAmount(garageEarnings)}</p>
                 <span className="text-[10px] text-emerald-500 font-bold block">Paid incident settlements</span>
               </div>
               <div className="p-3 bg-emerald-500/10 text-emerald-500 rounded-xl">
@@ -340,7 +347,7 @@ export const GarageDashboard = () => {
             <CardContent className="p-5 flex items-center justify-between">
               <div className="space-y-1">
                 <span className="text-[10px] text-muted-foreground font-extrabold uppercase tracking-wider block">Pending Payments</span>
-                <p className="text-2xl font-black text-foreground">${pendingCustomerPayments.toFixed(2)}</p>
+                <p className="text-2xl font-black text-foreground">{formatAmount(pendingCustomerPayments)}</p>
                 <span className="text-[10px] text-rose-500 font-bold block">Awaiting customer clearance</span>
               </div>
               <div className="p-3 bg-rose-500/10 text-rose-500 rounded-xl">
@@ -367,7 +374,7 @@ export const GarageDashboard = () => {
               <div className="flex justify-between items-start">
                 <div className="space-y-0.5">
                   <span className="text-[10px] text-muted-foreground font-extrabold uppercase tracking-wider block">Withdrawable Balance</span>
-                  <p className="text-xl font-black text-foreground">${availableBalance.toFixed(2)}</p>
+                  <p className="text-xl font-black text-foreground">{formatAmount(availableBalance)}</p>
                 </div>
                 <div className="p-2 bg-primary/10 text-primary rounded-lg">
                   <Landmark size={18} />
@@ -409,7 +416,7 @@ export const GarageDashboard = () => {
                           <td className="p-4 text-muted-foreground">{new Date(t.date).toLocaleDateString()}</td>
                           <td className="p-4 font-semibold text-foreground">{t.userName}</td>
                           <td className="p-4 text-muted-foreground">{t.vehicle}</td>
-                          <td className="p-4 font-bold text-foreground">{t.amount}</td>
+                          <td className="p-4 font-bold text-foreground">{formatAmount(parseFee(t.amount))}</td>
                           <td className="p-4 text-muted-foreground">{t.paymentMethod}</td>
                           <td className="p-4">
                             <span className="px-2 py-0.5 rounded text-[8px] font-bold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 uppercase">
@@ -438,7 +445,7 @@ export const GarageDashboard = () => {
                       </div>
                       <div className="flex justify-between items-center text-[10px] text-muted-foreground/80 pt-1 border-t border-border/40">
                         <span>{new Date(t.date).toLocaleDateString()}</span>
-                        <span className="font-bold text-foreground text-xs">{t.amount}</span>
+                        <span className="font-bold text-foreground text-xs">{formatAmount(parseFee(t.amount))}</span>
                       </div>
                     </div>
                   ))}

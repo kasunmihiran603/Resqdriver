@@ -106,31 +106,6 @@ export const Login = () => {
             {/* Form */}
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               
-              {/* Role Select Grid */}
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-foreground">Select Login Role</label>
-                <div className="grid grid-cols-4 gap-2">
-                  {roles.map((r) => {
-                    const isSelected = selectedRole === r.id;
-                    return (
-                      <button
-                        key={r.id}
-                        type="button"
-                        onClick={() => setSelectedRole(r.id)}
-                        className={`flex flex-col items-center justify-center p-2.5 rounded-xl border text-center transition-all cursor-pointer select-none ${
-                          isSelected
-                            ? "border-primary bg-primary/10 text-primary ring-2 ring-primary/20 font-bold"
-                            : "border-border bg-card text-muted-foreground hover:bg-muted/40"
-                        }`}
-                      >
-                        <div className="mb-1">{r.icon}</div>
-                        <span className="text-[10px] uppercase font-bold">{r.id}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
               {/* Email */}
               <Input
                 label="Email Address"

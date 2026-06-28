@@ -138,16 +138,14 @@ export const UserTowingRequest = () => {
           return (
             <React.Fragment key={s.number}>
               <div className="flex flex-col items-center gap-1.5">
-                <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-black border-2 transition-all ${
-                  done ? "bg-primary border-primary text-primary-foreground"
-                  : active ? "bg-card border-primary text-primary shadow-sm shadow-primary/20"
-                  : "bg-card border-border text-muted-foreground"
-                }`}>
+                <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-black border-2 transition-all ${done ? "bg-primary border-primary text-primary-foreground"
+                    : active ? "bg-card border-primary text-primary shadow-sm shadow-primary/20"
+                      : "bg-card border-border text-muted-foreground"
+                  }`}>
                   {done ? <CheckCircle size={16} className="stroke-[2.5]" /> : s.number}
                 </div>
-                <span className={`text-[10px] font-bold uppercase tracking-wide hidden sm:block ${
-                  active ? "text-primary" : done ? "text-foreground" : "text-muted-foreground"
-                }`}>
+                <span className={`text-[10px] font-bold uppercase tracking-wide hidden sm:block ${active ? "text-primary" : done ? "text-foreground" : "text-muted-foreground"
+                  }`}>
                   {s.label}
                 </span>
               </div>
@@ -185,11 +183,10 @@ export const UserTowingRequest = () => {
                     <button
                       key={t.id}
                       onClick={() => setIncidentType(t.id)}
-                      className={`flex items-center gap-3 p-4 rounded-xl border text-left transition-all cursor-pointer ${
-                        incidentType === t.id
+                      className={`flex items-center gap-3 p-4 rounded-xl border text-left transition-all cursor-pointer ${incidentType === t.id
                           ? `${t.bg} ring-2 ring-primary`
                           : "border-border bg-muted/10 hover:bg-muted/30"
-                      }`}
+                        }`}
                     >
                       <div className={`shrink-0 ${incidentType === t.id ? t.color : "text-muted-foreground"}`}>
                         {t.icon}
@@ -220,15 +217,13 @@ export const UserTowingRequest = () => {
                         <button
                           key={v.id || idx}
                           onClick={() => setVehicleChoice(`saved-${idx}`)}
-                          className={`w-full flex items-center gap-4 p-4 rounded-xl border text-left transition-all cursor-pointer ${
-                            vehicleChoice === `saved-${idx}`
+                          className={`w-full flex items-center gap-4 p-4 rounded-xl border text-left transition-all cursor-pointer ${vehicleChoice === `saved-${idx}`
                               ? "border-primary bg-primary/5 ring-2 ring-primary"
                               : "border-border bg-muted/10 hover:bg-muted/30"
-                          }`}
+                            }`}
                         >
-                          <div className={`p-2.5 rounded-xl border shrink-0 ${
-                            vehicleChoice === `saved-${idx}` ? "bg-primary/10 border-primary/30 text-primary" : "bg-card border-border text-muted-foreground"
-                          }`}>
+                          <div className={`p-2.5 rounded-xl border shrink-0 ${vehicleChoice === `saved-${idx}` ? "bg-primary/10 border-primary/30 text-primary" : "bg-card border-border text-muted-foreground"
+                            }`}>
                             <Car size={20} />
                           </div>
                           <div className="flex-1 min-w-0">
@@ -244,11 +239,10 @@ export const UserTowingRequest = () => {
 
                       <button
                         onClick={() => setVehicleChoice("manual")}
-                        className={`w-full flex items-center gap-4 p-4 rounded-xl border text-left transition-all cursor-pointer ${
-                          vehicleChoice === "manual"
+                        className={`w-full flex items-center gap-4 p-4 rounded-xl border text-left transition-all cursor-pointer ${vehicleChoice === "manual"
                             ? "border-primary bg-primary/5 ring-2 ring-primary"
                             : "border-dashed border-border bg-muted/5 hover:bg-muted/20"
-                        }`}
+                          }`}
                       >
                         <div className="p-2.5 rounded-xl border bg-card border-border text-muted-foreground shrink-0">
                           <Plus size={20} />

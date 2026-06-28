@@ -27,15 +27,21 @@ import { GarageTechnicians } from "../pages/garage/Technicians";
 import { GarageServices } from "../pages/garage/Services";
 import { GarageHistory } from "../pages/garage/History";
 import { GarageProfile } from "../pages/garage/Profile";
+import { GarageEditProfile } from "../pages/garage/EditProfile";
+import { GarageSettings } from "../pages/garage/Settings";
 
 // Towing Pages
 import { TowingDashboard } from "../pages/towing/Dashboard";
 import { TowingJobs } from "../pages/towing/Jobs";
+import { TowingProfile } from "../pages/towing/Profile";
+import { TowingEditProfile } from "../pages/towing/EditProfile";
+import { TowingSettings } from "../pages/towing/Settings";
 
 // Admin Pages
 import { AdminDashboard } from "../pages/admin/Dashboard";
 import { AdminUsers } from "../pages/admin/Users";
 import { AdminServices } from "../pages/admin/Services";
+import { AuditDetails } from "../pages/admin/AuditDetails";
 
 // Root Redirect component
 const RootRedirect = () => {
@@ -100,6 +106,8 @@ export const AppRoutes = () => {
           <Route path="services" element={<GarageServices />} />
           <Route path="history" element={<GarageHistory />} />
           <Route path="profile" element={<GarageProfile />} />
+          <Route path="edit-profile" element={<GarageEditProfile />} />
+          <Route path="settings" element={<GarageSettings />} />
           <Route path="" element={<Navigate to="dashboard" replace />} />
         </Route>
 
@@ -114,6 +122,9 @@ export const AppRoutes = () => {
         >
           <Route path="dashboard" element={<TowingDashboard />} />
           <Route path="jobs" element={<TowingJobs />} />
+          <Route path="profile" element={<TowingProfile />} />
+          <Route path="edit-profile" element={<TowingEditProfile />} />
+          <Route path="settings" element={<TowingSettings />} />
           <Route path="" element={<Navigate to="dashboard" replace />} />
         </Route>
 
@@ -129,6 +140,7 @@ export const AppRoutes = () => {
           <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="users" element={<AdminUsers />} />
           <Route path="services" element={<AdminServices />} />
+          <Route path="audit/:id" element={<AuditDetails />} />
           <Route path="" element={<Navigate to="dashboard" replace />} />
         </Route>
 
