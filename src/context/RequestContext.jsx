@@ -243,7 +243,7 @@ export const RequestProvider = ({ children }) => {
     if (role === "admin") return requests;
     if (role === "user") return requests.filter((r) => r.userId === id);
     if (role === "garage") return requests.filter((r) => r.garageId === id || (!r.garageId && r.status === "pending" && !r.towingId));
-    if (role === "towing") return requests.filter((r) => r.towingId === id || (!r.towingId && r.status === "pending" && r.category === "Accident"));
+    if (role === "towing") return requests.filter((r) => r.towingId === id || (!r.towingId && r.status === "pending" && (r.isTowingRequest || r.category === "Accident")));
     return [];
   };
 

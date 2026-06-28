@@ -127,7 +127,7 @@ export const UserDashboard = () => {
                       </p>
                     )}
                   </div>
-                  <Button onClick={() => navigate("/user/track")} size="sm" className="shrink-0 flex items-center gap-1">
+                  <Button onClick={() => navigate("/user/track", { state: { focusRequestId: req.id } })} size="sm" className="shrink-0 flex items-center gap-1">
                     Track Assistance <ChevronRight size={14} />
                   </Button>
                 </CardContent>

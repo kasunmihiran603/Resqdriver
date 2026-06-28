@@ -50,6 +50,7 @@ export const RoleLayout = () => {
     user: [
       { name: "Dashboard", path: "/user/dashboard", icon: <LayoutDashboard size={20} /> },
       { name: "Request Help", path: "/user/request", icon: <AlertTriangle size={20} /> },
+      { name: "Request a Tow", path: "/user/tow-request", icon: <Truck size={20} /> },
       { name: "Track Assistance", path: "/user/track", icon: <Navigation size={20} /> },
       { name: "My Vehicles", path: "/user/vehicles", icon: <Car size={20} /> },
       { name: "Payment & Billing", path: "/user/payments", icon: <CreditCard size={20} /> }
@@ -111,6 +112,7 @@ export const RoleLayout = () => {
             <NavLink
               key={item.path}
               to={item.path}
+              state={null}
               className={({ isActive }) =>
                 `flex items-center gap-3 px-4 h-11 rounded-lg text-sm font-semibold transition-all select-none ${
                   isActive
@@ -399,6 +401,7 @@ export const RoleLayout = () => {
           <NavLink
             key={item.path}
             to={item.path}
+            state={null}
             className={({ isActive }) =>
               `flex flex-col items-center justify-center flex-1 h-full py-1 text-[10px] font-bold select-none transition-colors ${
                 isActive ? "text-primary" : "text-muted-foreground"
