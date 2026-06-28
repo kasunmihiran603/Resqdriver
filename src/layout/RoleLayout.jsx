@@ -64,8 +64,7 @@ export const RoleLayout = () => {
     ],
     towing: [
       { name: "Dashboard", path: "/towing/dashboard", icon: <LayoutDashboard size={20} /> },
-      { name: "My Tow Jobs", path: "/towing/jobs", icon: <Truck size={20} /> },
-      { name: "Profile", path: "/towing/profile", icon: <User size={20} /> }
+      { name: "My Tow Jobs", path: "/towing/jobs", icon: <Truck size={20} /> }
     ],
     admin: [
       { name: "Overview", path: "/admin/dashboard", icon: <LayoutDashboard size={20} /> },
@@ -141,18 +140,22 @@ export const RoleLayout = () => {
                   className="absolute bottom-full left-4 right-4 mb-2 bg-card border border-border rounded-xl shadow-xl z-20 overflow-hidden"
                 >
                   <div className="p-1.5 space-y-0.5">
-                    <button
-                      onClick={() => { navigate(`/${currentUser?.role}/profile`); setShowUserMenu(false); }}
-                      className="flex items-center gap-3 px-3 h-10 rounded-lg text-sm font-semibold text-foreground hover:bg-muted w-full transition-colors cursor-pointer"
-                    >
-                      <User size={16} className="text-muted-foreground" /> View Profile
-                    </button>
-                    <button
-                      onClick={() => { navigate(`/${currentUser?.role}/edit-profile`); setShowUserMenu(false); }}
-                      className="flex items-center gap-3 px-3 h-10 rounded-lg text-sm font-semibold text-foreground hover:bg-muted w-full transition-colors cursor-pointer"
-                    >
-                      <Edit3 size={16} className="text-muted-foreground" /> Edit Profile
-                    </button>
+                    {currentUser?.role !== "admin" && (
+                      <>
+                        <button
+                          onClick={() => { navigate(`/${currentUser?.role}/profile`); setShowUserMenu(false); }}
+                          className="flex items-center gap-3 px-3 h-10 rounded-lg text-sm font-semibold text-foreground hover:bg-muted w-full transition-colors cursor-pointer"
+                        >
+                          <User size={16} className="text-muted-foreground" /> View Profile
+                        </button>
+                        <button
+                          onClick={() => { navigate(`/${currentUser?.role}/edit-profile`); setShowUserMenu(false); }}
+                          className="flex items-center gap-3 px-3 h-10 rounded-lg text-sm font-semibold text-foreground hover:bg-muted w-full transition-colors cursor-pointer"
+                        >
+                          <Edit3 size={16} className="text-muted-foreground" /> Edit Profile
+                        </button>
+                      </>
+                    )}
                     <button
                       onClick={() => { navigate(`/${currentUser?.role}/settings`); setShowUserMenu(false); }}
                       className="flex items-center gap-3 px-3 h-10 rounded-lg text-sm font-semibold text-foreground hover:bg-muted w-full transition-colors cursor-pointer"
@@ -341,18 +344,22 @@ export const RoleLayout = () => {
                         <p className="text-[10px] text-muted-foreground truncate">{currentUser?.email}</p>
                       </div>
                       <div className="space-y-0.5">
-                        <button
-                          onClick={() => { navigate(`/${currentUser?.role}/profile`); setShowProfileMenu(false); }}
-                          className="flex items-center gap-2.5 px-3 py-2 w-full text-left rounded-lg text-foreground hover:bg-muted cursor-pointer font-semibold transition-colors"
-                        >
-                          <User size={14} className="text-muted-foreground" /> View Profile
-                        </button>
-                        <button
-                          onClick={() => { navigate(`/${currentUser?.role}/edit-profile`); setShowProfileMenu(false); }}
-                          className="flex items-center gap-2.5 px-3 py-2 w-full text-left rounded-lg text-foreground hover:bg-muted cursor-pointer font-semibold transition-colors"
-                        >
-                          <Edit3 size={14} className="text-muted-foreground" /> Edit Profile
-                        </button>
+                        {currentUser?.role !== "admin" && (
+                          <>
+                            <button
+                              onClick={() => { navigate(`/${currentUser?.role}/profile`); setShowProfileMenu(false); }}
+                              className="flex items-center gap-2.5 px-3 py-2 w-full text-left rounded-lg text-foreground hover:bg-muted cursor-pointer font-semibold transition-colors"
+                            >
+                              <User size={14} className="text-muted-foreground" /> View Profile
+                            </button>
+                            <button
+                              onClick={() => { navigate(`/${currentUser?.role}/edit-profile`); setShowProfileMenu(false); }}
+                              className="flex items-center gap-2.5 px-3 py-2 w-full text-left rounded-lg text-foreground hover:bg-muted cursor-pointer font-semibold transition-colors"
+                            >
+                              <Edit3 size={14} className="text-muted-foreground" /> Edit Profile
+                            </button>
+                          </>
+                        )}
                         <button
                           onClick={() => { navigate(`/${currentUser?.role}/settings`); setShowProfileMenu(false); }}
                           className="flex items-center gap-2.5 px-3 py-2 w-full text-left rounded-lg text-foreground hover:bg-muted cursor-pointer font-semibold transition-colors"
