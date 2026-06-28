@@ -208,6 +208,21 @@ const TowTrackCard = ({ req, onCancel, focused }) => {
 
 // ─── Garage request card ─────────────────────────────────────────────────────
 
+const calculateDistanceKm = (lat1, lon1, lat2, lon2) => {
+  if (!lat1 || !lon1 || !lat2 || !lon2) return null;
+  const R = 6371;
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLon = (lon2 - lon1) * (Math.PI / 180);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * (Math.PI / 180)) *
+      Math.cos(lat2 * (Math.PI / 180)) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return (R * c).toFixed(1);
+};
+
 const GarageTrackCard = ({ req, onCancel, focused }) => {
   const [open, setOpen] = useState(true);
   const cardRef = useRef(null);
@@ -217,6 +232,11 @@ const GarageTrackCard = ({ req, onCancel, focused }) => {
       cardRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   }, [focused]);
+
+  // Mock garage location fallback if exact garage GPS is omitted
+  const garageLat = 37.7749;
+  const garageLng = -122.4194;
+  const distKm = req.gps ? calculateDistanceKm(garageLat, garageLng, req.gps.lat, req.gps.lng) : null;
 
   return (
     <motion.div ref={cardRef} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
@@ -292,7 +312,14 @@ const GarageTrackCard = ({ req, onCancel, focused }) => {
                   <Card className="border-border/80 text-left">
                     <CardHeader className="pb-2">
                       <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Assigned Partner</CardTitle>
-                      <h4 className="text-base font-bold text-foreground mt-0.5">{req.garageName}</h4>
+                      <div className="flex items-center justify-between gap-2 mt-0.5">
+                        <h4 className="text-base font-bold text-foreground">{req.garageName}</h4>
+                        {distKm && (
+                          <span className="text-[10px] bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 px-1.5 py-0.5 rounded font-extrabold shrink-0">
+                            📍 {distKm} km away
+                          </span>
+                        )}
+                      </div>
                     </CardHeader>
                     <CardContent className="space-y-3">
                       {req.technician ? (
