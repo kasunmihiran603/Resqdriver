@@ -47,22 +47,22 @@ export const GarageDashboard = () => {
   const paidJobs = completedJobs.filter((r) => r.paymentStatus === "paid");
   const unpaidJobs = completedJobs.filter((r) => r.paymentStatus === "unpaid");
 
-  // Sum revenue
+  // Sum revenue (90% of dispatch fee allocated to the garage)
   const totalRevenue = completedJobs.reduce((acc, curr) => {
     const numeric = parseFloat(curr.fee.replace(/[$,]/g, "")) || 0;
-    return acc + numeric;
+    return acc + (numeric * 0.9);
   }, 0);
 
-  // Sum earned revenue (completed and paid)
+  // Sum earned revenue (completed and paid, 90% allocated to the garage)
   const garageEarnings = paidJobs.reduce((acc, curr) => {
     const numeric = parseFloat(curr.fee.replace(/[$,]/g, "")) || 0;
-    return acc + numeric;
+    return acc + (numeric * 0.9);
   }, 0);
 
-  // Sum pending payments (completed and unpaid)
+  // Sum pending payments (completed and unpaid, 90% allocated to the garage)
   const pendingCustomerPayments = unpaidJobs.reduce((acc, curr) => {
     const numeric = parseFloat(curr.fee.replace(/[$,]/g, "")) || 0;
-    return acc + numeric;
+    return acc + (numeric * 0.9);
   }, 0);
 
   const [withdrawnTotal, setWithdrawnTotal] = useState(() => {
@@ -182,9 +182,9 @@ export const GarageDashboard = () => {
         <Card className="border-border/80">
           <CardContent className="p-5 flex items-center justify-between">
             <div className="space-y-1">
-              <span className="text-[10px] text-muted-foreground font-extrabold uppercase tracking-wider block">Estimated Earnings</span>
+              <span className="text-[10px] text-muted-foreground font-extrabold uppercase tracking-wider block">Estimated Dispatch Share</span>
               <p className="text-2xl font-black text-foreground">${totalRevenue.toFixed(2)}</p>
-              <span className="text-[10px] text-primary font-bold block">Based on base service fees</span>
+              <span className="text-[10px] text-primary font-bold block">After platform commission (10%)</span>
             </div>
             <div className="p-3 bg-primary/10 text-primary rounded-xl">
               <DollarSign size={22} />
@@ -339,9 +339,9 @@ export const GarageDashboard = () => {
           <Card className="border-border/80">
             <CardContent className="p-5 flex items-center justify-between">
               <div className="space-y-1">
-                <span className="text-[10px] text-muted-foreground font-extrabold uppercase tracking-wider block">Total Earnings</span>
+                <span className="text-[10px] text-muted-foreground font-extrabold uppercase tracking-wider block">Total Dispatch Share</span>
                 <p className="text-2xl font-black text-foreground">${garageEarnings.toFixed(2)}</p>
-                <span className="text-[10px] text-emerald-500 font-bold block">Paid incident settlements</span>
+                <span className="text-[10px] text-emerald-500 font-bold block">After platform commission (10%)</span>
               </div>
               <div className="p-3 bg-emerald-500/10 text-emerald-500 rounded-xl">
                 <DollarSign size={20} />
@@ -352,7 +352,7 @@ export const GarageDashboard = () => {
           <Card className="border-border/80">
             <CardContent className="p-5 flex items-center justify-between">
               <div className="space-y-1">
-                <span className="text-[10px] text-muted-foreground font-extrabold uppercase tracking-wider block">Pending Payments</span>
+                <span className="text-[10px] text-muted-foreground font-extrabold uppercase tracking-wider block">Pending Dispatch Share</span>
                 <p className="text-2xl font-black text-foreground">${pendingCustomerPayments.toFixed(2)}</p>
                 <span className="text-[10px] text-rose-500 font-bold block">Awaiting customer clearance</span>
               </div>

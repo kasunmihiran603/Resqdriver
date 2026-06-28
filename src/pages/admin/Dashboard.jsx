@@ -54,10 +54,10 @@ export const AdminDashboard = () => {
     return acc + numeric;
   }, 0);
 
-  // Platform Revenue
+  // Platform Revenue (Commission only - 10% of total dispatch volume)
   const totalRevenue = transactions.reduce((acc, curr) => {
     const numeric = parseFloat(curr.amount.replace(/[$,]/g, "")) || 0;
-    return acc + numeric;
+    return acc + (numeric * 0.10);
   }, 0);
 
   // Pending Payments
@@ -75,7 +75,7 @@ export const AdminDashboard = () => {
     })
     .reduce((acc, curr) => {
       const numeric = parseFloat(curr.amount.replace(/[$,]/g, "")) || 0;
-      return acc + numeric;
+      return acc + (numeric * 0.10);
     }, 0);
 
   const revenueTrends = [
@@ -172,9 +172,9 @@ export const AdminDashboard = () => {
         <Card className="border-border/80">
           <CardContent className="p-5 flex items-center justify-between">
             <div className="space-y-1">
-              <span className="text-[10px] text-muted-foreground font-extrabold uppercase tracking-wider block">Gross System Fees</span>
+              <span className="text-[10px] text-muted-foreground font-extrabold uppercase tracking-wider block">Gross Dispatch Fees</span>
               <p className="text-2xl font-black text-foreground">${systemFees.toFixed(2)}</p>
-              <span className="text-[10px] text-rose-500 font-bold block">Cumulative network value</span>
+              <span className="text-[10px] text-rose-500 font-bold block">Total dispatch fees logged</span>
             </div>
             <div className="p-3 bg-rose-500/10 text-rose-500 rounded-xl">
               <Activity size={20} />
@@ -335,9 +335,9 @@ export const AdminDashboard = () => {
           <Card className="border-border/80">
             <CardContent className="p-5 flex items-center justify-between">
               <div className="space-y-1">
-                <span className="text-[10px] text-muted-foreground font-extrabold uppercase tracking-wider block">Revenue Summary</span>
+                <span className="text-[10px] text-muted-foreground font-extrabold uppercase tracking-wider block">Platform Commission Earnings</span>
                 <p className="text-2xl font-black text-foreground">${totalRevenue.toFixed(2)}</p>
-                <span className="text-[10px] text-emerald-500 font-bold block">Gross platform clearings</span>
+                <span className="text-[10px] text-emerald-500 font-bold block">Total commission collected</span>
               </div>
               <div className="p-3 bg-emerald-500/10 text-emerald-500 rounded-xl">
                 <Activity size={20} />
@@ -361,9 +361,9 @@ export const AdminDashboard = () => {
           <Card className="border-border/80">
             <CardContent className="p-5 flex items-center justify-between">
               <div className="space-y-1">
-                <span className="text-[10px] text-muted-foreground font-extrabold uppercase tracking-wider block">Monthly Income</span>
+                <span className="text-[10px] text-muted-foreground font-extrabold uppercase tracking-wider block">Monthly Commission Earnings</span>
                 <p className="text-2xl font-black text-foreground">${monthlyIncome.toFixed(2)}</p>
-                <span className="text-[10px] text-primary font-bold block">Current month volume</span>
+                <span className="text-[10px] text-primary font-bold block">Current month commission volume</span>
               </div>
               <div className="p-3 bg-primary/10 text-primary rounded-xl">
                 <Landmark size={20} />

@@ -52,12 +52,11 @@ export const PaymentBilling = () => {
     ? parseFloat(outstandingRequest.fee.replace(/[$,]/g, "")) || 0
     : 0;
 
-  const towingFee = rawFee > 0 ? Math.round(rawFee * 0.4 * 100) / 100 : 0;
-  const repairCharge = rawFee > 0 ? Math.round(rawFee * 0.45 * 100) / 100 : 0;
-  const platformFee = rawFee > 0 ? Math.round(rawFee * 0.05 * 100) / 100 : 0;
-  const tax = rawFee > 0 ? Math.round(rawFee * 0.1 * 100) / 100 : 0;
+  const dispatchFee = rawFee;
+  const platformFee = rawFee > 0 ? Math.round(rawFee * 0.10 * 100) / 100 : 0;
+  const tax = rawFee > 0 ? Math.round(rawFee * 0.10 * 100) / 100 : 0;
   const discount = 0;
-  const grandTotal = towingFee + repairCharge + platformFee + tax - discount;
+  const grandTotal = dispatchFee + tax - discount;
 
   // Filter transactions belonging to this user
   const userTransactions = transactions.filter((t) => t.userId === currentUser?.id);
@@ -189,15 +188,11 @@ export const PaymentBilling = () => {
               </CardHeader>
               <CardContent className="p-5 space-y-3">
                 <div className="flex justify-between text-xs py-1 border-b border-border/40">
-                  <span className="text-muted-foreground">Towing & Transport Fee</span>
-                  <span className="font-bold text-foreground">${towingFee.toFixed(2)}</span>
+                  <span className="text-muted-foreground">Dispatch Fee</span>
+                  <span className="font-bold text-foreground">${dispatchFee.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-xs py-1 border-b border-border/40">
-                  <span className="text-muted-foreground">Repairs & Diagnostic Charge</span>
-                  <span className="font-bold text-foreground">${repairCharge.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-xs py-1 border-b border-border/40">
-                  <span className="text-muted-foreground">Platform Dispatch Fee</span>
+                  <span className="text-muted-foreground">Platform Commission</span>
                   <span className="font-bold text-foreground">${platformFee.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-xs py-1 border-b border-border/40">
@@ -317,8 +312,12 @@ export const PaymentBilling = () => {
             <CardContent className="p-5 space-y-4">
               <div className="space-y-2 text-xs">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Subtotal</span>
-                  <span className="font-semibold text-foreground">${(rawFee - tax).toFixed(2)}</span>
+                  <span className="text-muted-foreground">Dispatch Fee</span>
+                  <span className="font-semibold text-foreground">${dispatchFee.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Platform Commission</span>
+                  <span className="font-semibold text-foreground">${platformFee.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Tax</span>

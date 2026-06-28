@@ -83,7 +83,7 @@ export const TowingDashboard = () => {
 
   const totalEarnings = completedJobs.reduce((acc, curr) => {
     const numeric = parseFloat(curr.fee.replace(/[$,]/g, "")) || 0;
-    return acc + numeric;
+    return acc + (numeric * 0.9);
   }, 0);
 
   const handleAcceptJob = (reqId) => {
@@ -147,9 +147,9 @@ export const TowingDashboard = () => {
         <Card className="border-border/80">
           <CardContent className="p-5 flex items-center justify-between">
             <div className="space-y-1">
-              <span className="text-[10px] text-muted-foreground font-extrabold uppercase tracking-wider block">Tow Earnings</span>
+              <span className="text-[10px] text-muted-foreground font-extrabold uppercase tracking-wider block">Dispatch Earnings</span>
               <p className="text-2xl font-black text-foreground">${totalEarnings.toFixed(2)}</p>
-              <span className="text-[10px] text-primary font-bold block">Based on flat collision rates</span>
+              <span className="text-[10px] text-primary font-bold block">After platform commission (10%)</span>
             </div>
             <div className="p-3 bg-primary/10 text-primary rounded-xl">
               <Truck size={22} className="stroke-primary" />

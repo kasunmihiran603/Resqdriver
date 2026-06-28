@@ -10,6 +10,44 @@ export const useRequests = () => {
   return context;
 };
 
+const calculateDistanceKm = (lat1, lon1, lat2, lon2) => {
+  if (!lat1 || !lon1 || !lat2 || !lon2) return null;
+  const R = 6371; // Radius of earth in km
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLon = (lon2 - lon1) * (Math.PI / 180);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * (Math.PI / 180)) *
+      Math.cos(lat2 * (Math.PI / 180)) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return parseFloat((R * c).toFixed(1));
+};
+
+const calculateDispatchCost = (req) => {
+  if (!req) return 0;
+  let distance = 0;
+  if (req.isTowingRequest || req.category === "Accident") {
+    if (req.gps && req.destinationGps) {
+      distance = calculateDistanceKm(req.gps.lat, req.gps.lng, req.destinationGps.lat, req.destinationGps.lng) || 8.5;
+    } else {
+      distance = 8.5;
+    }
+  } else {
+    const garageLat = 37.7749;
+    const garageLng = -122.4194;
+    if (req.gps) {
+      distance = calculateDistanceKm(garageLat, garageLng, req.gps.lat, req.gps.lng) || 3.2;
+      if (distance === 0) distance = 3.2; // fallback if identical
+    } else {
+      distance = 4.5;
+    }
+  }
+  const cost = distance * 15.00;
+  return Math.round(cost * 100) / 100;
+};
+
 const seedRequests = () => {
   const requests = localStorage.getItem("vamp-requests");
   if (!requests) {
@@ -35,7 +73,7 @@ const seedRequests = () => {
         towingId: null,
         eta: "14 mins",
         timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
-        fee: "$240.00"
+        fee: "$28.50"
       },
       {
         id: "req-2",
@@ -58,7 +96,7 @@ const seedRequests = () => {
         towingId: null,
         eta: "Completed",
         timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-        fee: "$85.00"
+        fee: "$48.00"
       },
       {
         id: "req-3",
@@ -81,7 +119,7 @@ const seedRequests = () => {
         technician: null,
         eta: "Pending Driver Assignment",
         timestamp: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
-        fee: "$180.00"
+        fee: "$127.50"
       },
       {
         id: "req-4",
@@ -104,7 +142,7 @@ const seedRequests = () => {
         towingId: null,
         eta: "Completed",
         timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-        fee: "$150.00"
+        fee: "$36.00"
       }
     ];
     localStorage.setItem("vamp-requests", JSON.stringify(defaultRequests));
@@ -123,7 +161,7 @@ const seedTransactions = () => {
         garageId: "grg-1",
         garageName: "Apex Auto Care",
         vehicle: "Toyota RAV4 (TR-8923A)",
-        amount: "$85.00",
+        amount: "$48.00",
         paymentMethod: "Visa ending 4521",
         status: "Successful",
         date: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
@@ -176,6 +214,7 @@ export const RequestProvider = ({ children }) => {
   };
 
   const createRequest = (requestData) => {
+    const feeVal = calculateDispatchCost(requestData);
     const newRequest = {
       id: `req-${Date.now()}`,
       timestamp: new Date().toISOString(),
@@ -185,8 +224,8 @@ export const RequestProvider = ({ children }) => {
       technician: null,
       towingId: null,
       eta: "Searching for helpers...",
-      fee: "$150.00",
-      ...requestData
+      ...requestData,
+      fee: `$${feeVal.toFixed(2)}`
     };
 
     const updated = [newRequest, ...requests];
