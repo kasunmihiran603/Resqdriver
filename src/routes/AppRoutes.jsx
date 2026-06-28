@@ -18,6 +18,7 @@ import { UserProfile } from "../pages/user/Profile";
 import { EditProfile } from "../pages/user/EditProfile";
 import { UserSettings } from "../pages/user/Settings";
 import { UserTowingRequest } from "../pages/user/TowingRequest";
+import { PaymentBilling } from "../pages/user/PaymentBilling";
 
 // Garage Pages
 import { GarageDashboard } from "../pages/garage/Dashboard";
@@ -26,6 +27,8 @@ import { GarageTechnicians } from "../pages/garage/Technicians";
 import { GarageServices } from "../pages/garage/Services";
 import { GarageHistory } from "../pages/garage/History";
 import { GarageProfile } from "../pages/garage/Profile";
+import { GarageEditProfile } from "../pages/garage/EditProfile";
+import { GarageSettings } from "../pages/garage/Settings";
 
 // Towing Pages
 import { TowingDashboard } from "../pages/towing/Dashboard";
@@ -80,6 +83,7 @@ export const AppRoutes = () => {
           <Route path="profile" element={<UserProfile />} />
           <Route path="edit-profile" element={<EditProfile />} />
           <Route path="settings" element={<UserSettings />} />
+          <Route path="payments" element={<PaymentBilling />} />
           <Route path="" element={<Navigate to="dashboard" replace />} />
         </Route>
 
@@ -98,6 +102,8 @@ export const AppRoutes = () => {
           <Route path="services" element={<GarageServices />} />
           <Route path="history" element={<GarageHistory />} />
           <Route path="profile" element={<GarageProfile />} />
+          <Route path="edit-profile" element={<GarageEditProfile />} />
+          <Route path="settings" element={<GarageSettings />} />
           <Route path="" element={<Navigate to="dashboard" replace />} />
         </Route>
 

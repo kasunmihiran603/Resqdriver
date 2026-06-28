@@ -24,7 +24,8 @@ import {
   Navigation,
   User,
   Edit3,
-  ChevronUp
+  ChevronUp,
+  CreditCard
 } from "lucide-react";
 
 export const RoleLayout = () => {
@@ -51,7 +52,8 @@ export const RoleLayout = () => {
       { name: "Request Help", path: "/user/request", icon: <AlertTriangle size={20} /> },
       { name: "Request a Tow", path: "/user/tow-request", icon: <Truck size={20} /> },
       { name: "Track Assistance", path: "/user/track", icon: <Navigation size={20} /> },
-      { name: "My Vehicles", path: "/user/vehicles", icon: <Car size={20} /> }
+      { name: "My Vehicles", path: "/user/vehicles", icon: <Car size={20} /> },
+      { name: "Payment & Billing", path: "/user/payments", icon: <CreditCard size={20} /> }
     ],
     garage: [
       { name: "Dashboard", path: "/garage/dashboard", icon: <LayoutDashboard size={20} /> },

@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useRequests } from "../../context/RequestContext";
+import { useToast } from "../../context/ToastContext";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import {
@@ -10,7 +11,10 @@ import {
   Users,
   CheckCircle,
   Clock,
-  ArrowRight
+  ArrowRight,
+  Landmark,
+  ArrowDownCircle,
+  History
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -30,7 +34,8 @@ import { useNavigate } from "react-router-dom";
 
 export const GarageDashboard = () => {
   const { currentUser } = useAuth();
-  const { requests } = useRequests();
+  const { requests, transactions, withdrawGarageBalance } = useRequests();
+  const { showToast } = useToast();
   const navigate = useNavigate();
 
   // Filter requests that belong to this garage, or are pending in general (available to accept)
@@ -39,11 +44,47 @@ export const GarageDashboard = () => {
   const activeJobs = garageRequests.filter((r) => r.status !== "completed" && r.status !== "pending");
   const completedJobs = garageRequests.filter((r) => r.status === "completed");
 
+  const paidJobs = completedJobs.filter((r) => r.paymentStatus === "paid");
+  const unpaidJobs = completedJobs.filter((r) => r.paymentStatus === "unpaid");
+
   // Sum revenue
   const totalRevenue = completedJobs.reduce((acc, curr) => {
     const numeric = parseFloat(curr.fee.replace(/[$,]/g, "")) || 0;
     return acc + numeric;
   }, 0);
+
+  // Sum earned revenue (completed and paid)
+  const garageEarnings = paidJobs.reduce((acc, curr) => {
+    const numeric = parseFloat(curr.fee.replace(/[$,]/g, "")) || 0;
+    return acc + numeric;
+  }, 0);
+
+  // Sum pending payments (completed and unpaid)
+  const pendingCustomerPayments = unpaidJobs.reduce((acc, curr) => {
+    const numeric = parseFloat(curr.fee.replace(/[$,]/g, "")) || 0;
+    return acc + numeric;
+  }, 0);
+
+  const [withdrawnTotal, setWithdrawnTotal] = useState(() => {
+    return parseFloat(localStorage.getItem(`vamp-garage-withdrawn-${currentUser.id}`) || "0");
+  });
+
+  const availableBalance = Math.max(0, garageEarnings - withdrawnTotal);
+
+  const handleWithdraw = () => {
+    if (availableBalance <= 0) {
+      showToast("No available earnings to withdraw.", "warning");
+      return;
+    }
+    withdrawGarageBalance(currentUser.id);
+    const newWithdrawn = withdrawnTotal + availableBalance;
+    setWithdrawnTotal(newWithdrawn);
+    localStorage.setItem(`vamp-garage-withdrawn-${currentUser.id}`, newWithdrawn.toString());
+    showToast(`Withdrawal of $${availableBalance.toFixed(2)} completed to your bank.`, "success");
+  };
+
+  // Filter transactions for this garage
+  const garageTransactions = transactions.filter((t) => t.garageId === currentUser.id);
 
   // Mock data for Recharts trends
   const trendData = [
@@ -274,6 +315,142 @@ export const GarageDashboard = () => {
           </CardContent>
         </Card>
 
+      </div>
+
+      {/* Financial Overview & Payments Section */}
+      <div className="space-y-3 text-left">
+        <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Financial Ledger & Withdrawals</h3>
+        
+        {/* Earnings Metrics Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card className="border-border/80">
+            <CardContent className="p-5 flex items-center justify-between">
+              <div className="space-y-1">
+                <span className="text-[10px] text-muted-foreground font-extrabold uppercase tracking-wider block">Total Earnings</span>
+                <p className="text-2xl font-black text-foreground">${garageEarnings.toFixed(2)}</p>
+                <span className="text-[10px] text-emerald-500 font-bold block">Paid incident settlements</span>
+              </div>
+              <div className="p-3 bg-emerald-500/10 text-emerald-500 rounded-xl">
+                <DollarSign size={20} />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border/80">
+            <CardContent className="p-5 flex items-center justify-between">
+              <div className="space-y-1">
+                <span className="text-[10px] text-muted-foreground font-extrabold uppercase tracking-wider block">Pending Payments</span>
+                <p className="text-2xl font-black text-foreground">${pendingCustomerPayments.toFixed(2)}</p>
+                <span className="text-[10px] text-rose-500 font-bold block">Awaiting customer clearance</span>
+              </div>
+              <div className="p-3 bg-rose-500/10 text-rose-500 rounded-xl">
+                <Clock size={20} />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border/80">
+            <CardContent className="p-5 flex items-center justify-between">
+              <div className="space-y-1">
+                <span className="text-[10px] text-muted-foreground font-extrabold uppercase tracking-wider block">Completed Payments</span>
+                <p className="text-2xl font-black text-foreground">{paidJobs.length}</p>
+                <span className="text-[10px] text-primary font-bold block">Successful clearings</span>
+              </div>
+              <div className="p-3 bg-primary/10 text-primary rounded-xl">
+                <CheckCircle size={20} />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border/80 bg-primary/[0.01]">
+            <CardContent className="p-5 flex flex-col justify-between h-full gap-2">
+              <div className="flex justify-between items-start">
+                <div className="space-y-0.5">
+                  <span className="text-[10px] text-muted-foreground font-extrabold uppercase tracking-wider block">Withdrawable Balance</span>
+                  <p className="text-xl font-black text-foreground">${availableBalance.toFixed(2)}</p>
+                </div>
+                <div className="p-2 bg-primary/10 text-primary rounded-lg">
+                  <Landmark size={18} />
+                </div>
+              </div>
+              <Button onClick={handleWithdraw} disabled={availableBalance <= 0} size="sm" className="w-full h-8 text-[11px] font-bold mt-1.5 flex items-center justify-center gap-1">
+                <ArrowDownCircle size={13} /> Withdraw Balance
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Payment History Table */}
+        <Card className="border-border/80">
+          <CardHeader className="pb-3 border-b">
+            <CardTitle className="text-base font-bold text-foreground">Settlement History Logs</CardTitle>
+            <CardDescription>Ledger of clearing updates on completed client requests.</CardDescription>
+          </CardHeader>
+          <CardContent className="p-0">
+            {garageTransactions.length > 0 ? (
+              <>
+                <div className="hidden sm:block overflow-x-auto">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="bg-muted/40 border-y border-border/50 text-muted-foreground font-bold text-[10px] uppercase tracking-wider">
+                        <th className="p-4">Transaction ID</th>
+                        <th className="p-4">Date</th>
+                        <th className="p-4">Client</th>
+                        <th className="p-4">Vehicle</th>
+                        <th className="p-4">Amount</th>
+                        <th className="p-4">Method</th>
+                        <th className="p-4">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border/50">
+                      {garageTransactions.map((t) => (
+                        <tr key={t.id} className="hover:bg-muted/10 transition-colors">
+                          <td className="p-4 font-bold text-foreground">{t.id}</td>
+                          <td className="p-4 text-muted-foreground">{new Date(t.date).toLocaleDateString()}</td>
+                          <td className="p-4 font-semibold text-foreground">{t.userName}</td>
+                          <td className="p-4 text-muted-foreground">{t.vehicle}</td>
+                          <td className="p-4 font-bold text-foreground">{t.amount}</td>
+                          <td className="p-4 text-muted-foreground">{t.paymentMethod}</td>
+                          <td className="p-4">
+                            <span className="px-2 py-0.5 rounded text-[8px] font-bold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 uppercase">
+                              {t.status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="sm:hidden divide-y divide-border/60">
+                  {garageTransactions.map((t) => (
+                    <div key={t.id} className="p-4 space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="font-bold text-xs text-foreground">{t.id}</span>
+                        <span className="px-2 py-0.5 rounded text-[8px] font-bold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 uppercase">
+                          {t.status}
+                        </span>
+                      </div>
+                      <div className="text-[11px] space-y-1 text-muted-foreground">
+                        <p>Client: <span className="font-semibold text-foreground">{t.userName}</span></p>
+                        <p>Vehicle: <span className="text-foreground">{t.vehicle}</span></p>
+                        <p>Method: <span className="text-foreground">{t.paymentMethod}</span></p>
+                      </div>
+                      <div className="flex justify-between items-center text-[10px] text-muted-foreground/80 pt-1 border-t border-border/40">
+                        <span>{new Date(t.date).toLocaleDateString()}</span>
+                        <span className="font-bold text-foreground text-xs">{t.amount}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-12 text-xs text-muted-foreground">
+                No past settlements logged for your workshop.
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
     </div>
