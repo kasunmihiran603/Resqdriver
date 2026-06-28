@@ -1,3 +1,4 @@
+import { UserTowingRequest } from "../pages/user/TowingRequest";
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -17,6 +18,7 @@ import { UserVehicles } from "../pages/user/Vehicles";
 import { UserProfile } from "../pages/user/Profile";
 import { EditProfile } from "../pages/user/EditProfile";
 import { UserSettings } from "../pages/user/Settings";
+import { PaymentBilling } from "../pages/user/PaymentBilling";
 
 // Garage Pages
 import { GarageDashboard } from "../pages/garage/Dashboard";
