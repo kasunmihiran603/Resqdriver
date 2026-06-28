@@ -20,7 +20,11 @@ import {
   Palette,
   Bell,
   Menu,
-  X
+  X,
+  Navigation,
+  User,
+  Edit3,
+  ChevronUp
 } from "lucide-react";
 
 export const RoleLayout = () => {
@@ -32,6 +36,7 @@ export const RoleLayout = () => {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showAccentMenu, setShowAccentMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -44,6 +49,8 @@ export const RoleLayout = () => {
     user: [
       { name: "Dashboard", path: "/user/dashboard", icon: <LayoutDashboard size={20} /> },
       { name: "Request Help", path: "/user/request", icon: <AlertTriangle size={20} /> },
+      { name: "Request a Tow", path: "/user/tow-request", icon: <Truck size={20} /> },
+      { name: "Track Assistance", path: "/user/track", icon: <Navigation size={20} /> },
       { name: "My Vehicles", path: "/user/vehicles", icon: <Car size={20} /> }
     ],
     garage: [
@@ -103,6 +110,7 @@ export const RoleLayout = () => {
             <NavLink
               key={item.path}
               to={item.path}
+              state={null}
               className={({ isActive }) =>
                 `flex items-center gap-3 px-4 h-11 rounded-lg text-sm font-semibold transition-all select-none ${
                   isActive
@@ -118,24 +126,69 @@ export const RoleLayout = () => {
         </nav>
 
         {/* Sidebar Footer */}
-        <div className="p-4 border-t border-border/60">
-          <div className="flex items-center gap-3 p-2 rounded-lg bg-muted/40 mb-3">
-            <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary">
-              {currentUser?.name?.substring(0, 2).toUpperCase()}
-            </div>
-            <div className="min-w-0 flex-1">
+        <div className="p-4 border-t border-border/60 relative">
+          <AnimatePresence>
+            {showUserMenu && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => setShowUserMenu(false)} />
+                <motion.div
+                  initial={{ opacity: 0, y: 8, scale: 0.97 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 8, scale: 0.97 }}
+                  transition={{ duration: 0.15 }}
+                  className="absolute bottom-full left-4 right-4 mb-2 bg-card border border-border rounded-xl shadow-xl z-20 overflow-hidden"
+                >
+                  <div className="p-1.5 space-y-0.5">
+                    <button
+                      onClick={() => { navigate(`/${currentUser?.role}/profile`); setShowUserMenu(false); }}
+                      className="flex items-center gap-3 px-3 h-10 rounded-lg text-sm font-semibold text-foreground hover:bg-muted w-full transition-colors cursor-pointer"
+                    >
+                      <User size={16} className="text-muted-foreground" /> View Profile
+                    </button>
+                    <button
+                      onClick={() => { navigate(`/${currentUser?.role}/edit-profile`); setShowUserMenu(false); }}
+                      className="flex items-center gap-3 px-3 h-10 rounded-lg text-sm font-semibold text-foreground hover:bg-muted w-full transition-colors cursor-pointer"
+                    >
+                      <Edit3 size={16} className="text-muted-foreground" /> Edit Profile
+                    </button>
+                    <button
+                      onClick={() => { navigate(`/${currentUser?.role}/settings`); setShowUserMenu(false); }}
+                      className="flex items-center gap-3 px-3 h-10 rounded-lg text-sm font-semibold text-foreground hover:bg-muted w-full transition-colors cursor-pointer"
+                    >
+                      <Settings size={16} className="text-muted-foreground" /> Settings
+                    </button>
+                  </div>
+                  <div className="border-t border-border/60 p-1.5">
+                    <button
+                      onClick={() => { handleLogout(); setShowUserMenu(false); }}
+                      className="flex items-center gap-3 px-3 h-10 rounded-lg text-sm font-semibold text-rose-500 hover:bg-rose-500/10 w-full transition-colors cursor-pointer"
+                    >
+                      <LogOut size={16} /> Sign Out
+                    </button>
+                  </div>
+                </motion.div>
+              </>
+            )}
+          </AnimatePresence>
+
+          <button
+            onClick={() => setShowUserMenu(!showUserMenu)}
+            className="flex items-center gap-3 p-2 rounded-lg bg-muted/40 hover:bg-muted/70 w-full transition-colors cursor-pointer"
+          >
+            {currentUser?.photo ? (
+              <img src={currentUser.photo} alt="Profile" className="w-9 h-9 rounded-full object-cover border border-border shrink-0" />
+            ) : (
+              <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary shrink-0">
+                {currentUser?.name?.substring(0, 2).toUpperCase()}
+              </div>
+            )}
+            <div className="min-w-0 flex-1 text-left">
               <p className="text-xs font-bold truncate text-foreground">{currentUser?.name}</p>
               <span className={`inline-block px-1.5 py-0.5 rounded text-[8px] font-bold uppercase border mt-0.5 ${roleColors[currentUser?.role]}`}>
                 {currentUser?.role}
               </span>
             </div>
-          </div>
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-3 px-4 h-11 rounded-lg text-sm font-semibold text-rose-500 hover:bg-rose-500/10 w-full transition-colors cursor-pointer"
-          >
-            <LogOut size={20} />
-            Sign Out
+            <ChevronUp size={14} className={`text-muted-foreground shrink-0 transition-transform ${showUserMenu ? "" : "rotate-180"}`} />
           </button>
         </div>
       </aside>
@@ -263,9 +316,13 @@ export const RoleLayout = () => {
             <div className="md:hidden relative">
               <button
                 onClick={() => setShowProfileMenu(!showProfileMenu)}
-                className="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs cursor-pointer select-none"
+                className="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs cursor-pointer select-none overflow-hidden border border-primary/20"
               >
-                {currentUser?.name?.substring(0, 2).toUpperCase()}
+                {currentUser?.photo ? (
+                  <img src={currentUser.photo} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                  currentUser?.name?.substring(0, 2).toUpperCase()
+                )}
               </button>
               <AnimatePresence>
                 {showProfileMenu && (
@@ -275,19 +332,41 @@ export const RoleLayout = () => {
                       initial={{ opacity: 0, y: 10, scale: 0.95 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                      className="absolute right-0 mt-2 w-48 bg-card border border-border rounded-xl shadow-xl z-20 p-2 text-sm"
+                      className="absolute right-0 mt-2 w-52 bg-card border border-border rounded-xl shadow-xl z-20 p-1.5 text-sm"
                     >
-                      <div className="px-3 py-2 border-b border-border/60 mb-1">
+                      <div className="px-3 py-2.5 border-b border-border/60 mb-1">
                         <p className="font-bold text-xs truncate">{currentUser?.name}</p>
                         <p className="text-[10px] text-muted-foreground truncate">{currentUser?.email}</p>
                       </div>
-                      <button
-                        onClick={handleLogout}
-                        className="flex items-center gap-2 px-3 py-2 w-full text-left rounded-lg text-rose-500 hover:bg-rose-500/10 cursor-pointer font-semibold transition-colors"
-                      >
-                        <LogOut size={15} />
-                        Sign Out
-                      </button>
+                      <div className="space-y-0.5">
+                        <button
+                          onClick={() => { navigate(`/${currentUser?.role}/profile`); setShowProfileMenu(false); }}
+                          className="flex items-center gap-2.5 px-3 py-2 w-full text-left rounded-lg text-foreground hover:bg-muted cursor-pointer font-semibold transition-colors"
+                        >
+                          <User size={14} className="text-muted-foreground" /> View Profile
+                        </button>
+                        <button
+                          onClick={() => { navigate(`/${currentUser?.role}/edit-profile`); setShowProfileMenu(false); }}
+                          className="flex items-center gap-2.5 px-3 py-2 w-full text-left rounded-lg text-foreground hover:bg-muted cursor-pointer font-semibold transition-colors"
+                        >
+                          <Edit3 size={14} className="text-muted-foreground" /> Edit Profile
+                        </button>
+                        <button
+                          onClick={() => { navigate(`/${currentUser?.role}/settings`); setShowProfileMenu(false); }}
+                          className="flex items-center gap-2.5 px-3 py-2 w-full text-left rounded-lg text-foreground hover:bg-muted cursor-pointer font-semibold transition-colors"
+                        >
+                          <Settings size={14} className="text-muted-foreground" /> Settings
+                        </button>
+                      </div>
+                      <div className="border-t border-border/60 mt-1 pt-1">
+                        <button
+                          onClick={() => { handleLogout(); setShowProfileMenu(false); }}
+                          className="flex items-center gap-2.5 px-3 py-2 w-full text-left rounded-lg text-rose-500 hover:bg-rose-500/10 cursor-pointer font-semibold transition-colors"
+                        >
+                          <LogOut size={14} />
+                          Sign Out
+                        </button>
+                      </div>
                     </motion.div>
                   </>
                 )}
@@ -320,6 +399,7 @@ export const RoleLayout = () => {
           <NavLink
             key={item.path}
             to={item.path}
+            state={null}
             className={({ isActive }) =>
               `flex flex-col items-center justify-center flex-1 h-full py-1 text-[10px] font-bold select-none transition-colors ${
                 isActive ? "text-primary" : "text-muted-foreground"

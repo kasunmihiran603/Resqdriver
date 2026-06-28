@@ -65,23 +65,13 @@ export const AssistanceWizard = () => {
   // Active tracking state
   const [activeRequest, setActiveRequest] = useState(null);
 
-  // Auto-redirect if preselectedCategory or activeRequest is sent via routing
+  // Auto-advance to diagnostics step if a category was pre-selected via routing
   useEffect(() => {
     if (location.state?.preselectedCategory) {
       handleSelectCategory(location.state.preselectedCategory);
       setStep(2);
-    } else if (location.state?.activeRequest) {
-      setActiveRequest(location.state.activeRequest);
-      setStep(5);
-    } else {
-      // Look for the user's active request in local storage requests list
-      const active = requests.find((r) => r.userId === currentUser?.id && r.status !== "completed");
-      if (active) {
-        setActiveRequest(active);
-        setStep(5);
-      }
     }
-  }, [location.state, requests, currentUser]);
+  }, [location.state]);
 
   // Set default vehicle
   useEffect(() => {
@@ -228,10 +218,9 @@ export const AssistanceWizard = () => {
       audioSimulated: hasVoiceNote
     };
 
-    const newReq = createRequest(payload);
-    setActiveRequest(newReq);
+    createRequest(payload);
     showToast("Emergency dispatch signal sent!", "success");
-    setStep(5);
+    navigate("/user/track");
   };
 
   // Status updates mapping for tracker
@@ -589,15 +578,16 @@ export const AssistanceWizard = () => {
                   className="rounded-t-none border-t-0"
                 />
               </div>
-
-              <div className="pt-2">
-                <Button onClick={handleSubmitRequest} className="w-full flex items-center justify-center gap-2">
-                  <Navigation size={18} className="rotate-45" />
-                  Broadcast Help Call
-                </Button>
-              </div>
             </div>
 
+          </div>
+
+          {/* Submit button — always visible at the bottom */}
+          <div className="pt-2 border-t border-border">
+            <Button onClick={handleSubmitRequest} className="w-full flex items-center justify-center gap-2 h-12 text-base font-bold">
+              <Navigation size={20} className="rotate-45" />
+              Broadcast Help Call
+            </Button>
           </div>
         </motion.div>
       )}

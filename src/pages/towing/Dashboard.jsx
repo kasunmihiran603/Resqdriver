@@ -15,7 +15,7 @@ export const TowingDashboard = () => {
 
   // Filter towing specific requests (category 'Accident' or explicitly assigned)
   const towingJobs = requests.filter((r) => r.towingId === currentUser.id);
-  const unclaimedTows = requests.filter((r) => r.status === "pending" && r.category === "Accident" && !r.towingId);
+  const unclaimedTows = requests.filter((r) => r.status === "pending" && !r.towingId && (r.isTowingRequest || r.category === "Accident"));
   const activeJob = towingJobs.find((r) => r.status !== "completed");
   const completedJobs = towingJobs.filter((r) => r.status === "completed");
 

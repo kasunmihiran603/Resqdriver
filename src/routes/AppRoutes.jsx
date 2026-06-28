@@ -12,7 +12,12 @@ import { ForgotPassword } from "../pages/auth/ForgotPassword";
 // User Pages
 import { UserDashboard } from "../pages/user/Dashboard";
 import { AssistanceWizard } from "../pages/user/AssistanceWizard";
+import { TrackAssistance } from "../pages/user/TrackAssistance";
 import { UserVehicles } from "../pages/user/Vehicles";
+import { UserProfile } from "../pages/user/Profile";
+import { EditProfile } from "../pages/user/EditProfile";
+import { UserSettings } from "../pages/user/Settings";
+import { UserTowingRequest } from "../pages/user/TowingRequest";
 
 // Garage Pages
 import { GarageDashboard } from "../pages/garage/Dashboard";
@@ -69,7 +74,12 @@ export const AppRoutes = () => {
         >
           <Route path="dashboard" element={<UserDashboard />} />
           <Route path="request" element={<AssistanceWizard />} />
+          <Route path="track" element={<TrackAssistance />} />
           <Route path="vehicles" element={<UserVehicles />} />
+          <Route path="tow-request" element={<UserTowingRequest />} />
+          <Route path="profile" element={<UserProfile />} />
+          <Route path="edit-profile" element={<EditProfile />} />
+          <Route path="settings" element={<UserSettings />} />
           <Route path="" element={<Navigate to="dashboard" replace />} />
         </Route>
 
