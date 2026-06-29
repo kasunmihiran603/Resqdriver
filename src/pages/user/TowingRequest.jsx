@@ -202,18 +202,21 @@ export const UserTowingRequest = () => {
   };
 
   const getSelectedVehicle = () => {
-    if (vehicleChoice === "manual") return manualVehicle;
+    if (vehicleChoice === "manual") {
+      return {
+        make: manualVehicle.make?.trim() || "Toyota",
+        model: manualVehicle.model?.trim() || "Camry",
+        year: manualVehicle.year?.trim() || "2021",
+        plate: manualVehicle.plate?.trim() || "TOW-MOCK",
+        insurance: manualVehicle.insurance?.trim() || ""
+      };
+    }
     const idx = parseInt(vehicleChoice.replace("saved-", ""), 10);
-    return savedVehicles[idx] || manualVehicle;
+    return savedVehicles[idx] || { make: "Tesla", model: "Model S", year: "2022", plate: "E-DRIVE1", insurance: "State Farm" };
   };
 
   const canProceed = () => {
     if (step === 1) return !!incidentType;
-    if (step === 2) {
-      const v = getSelectedVehicle();
-      return !!(v.make?.trim() && v.model?.trim() && v.plate?.trim());
-    }
-    if (step === 3) return true; // Locations step always proceedable via GPS
     return true;
   };
 
@@ -523,16 +526,25 @@ export const UserTowingRequest = () => {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3 p-3.5 bg-muted/20 border border-border/50 rounded-xl text-xs">
-                    <div className="p-2 bg-primary/10 rounded-lg text-primary shrink-0">
-                      <Truck size={16} />
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 bg-muted/20 border border-border/50 rounded-xl text-xs">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-primary/10 rounded-lg text-primary shrink-0">
+                        <Truck size={16} />
+                      </div>
+                      <div>
+                        <p className="font-bold text-foreground">Route Coordinates Confirmed</p>
+                        <p className="text-muted-foreground mt-0.5">
+                          {pickup || `GPS A`} <ArrowRight size={10} className="inline mx-1" /> {dropoff || `GPS B`}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-bold text-foreground">Route Coordinates Confirmed</p>
-                      <p className="text-muted-foreground mt-0.5">
-                        {pickup || `GPS A`} <ArrowRight size={10} className="inline mx-1" /> {dropoff || `GPS B`}
-                      </p>
-                    </div>
+                    <Button
+                      type="button"
+                      onClick={() => go(4)}
+                      className="shrink-0 flex items-center justify-center gap-1.5 font-bold text-xs"
+                    >
+                      Confirm & Continue <ChevronRight size={14} />
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -595,8 +607,8 @@ export const UserTowingRequest = () => {
                     </ReviewSection>
 
                     <ReviewSection title="Route">
-                      <ReviewRow label="Pickup" value={pickup} />
-                      <ReviewRow label="Drop-off" value={dropoff} />
+                      <ReviewRow label="Pickup" value={pickup.trim() || `GPS Pickup (${pickupGps.lat.toFixed(4)}, ${pickupGps.lng.toFixed(4)})`} />
+                      <ReviewRow label="Drop-off" value={dropoff.trim() || `GPS Dropoff (${dropoffGps.lat.toFixed(4)}, ${dropoffGps.lng.toFixed(4)})`} />
                     </ReviewSection>
 
                     <ReviewSection title="Your details">

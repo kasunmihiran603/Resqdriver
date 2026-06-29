@@ -33,6 +33,31 @@ import {
 } from "recharts";
 import { useNavigate } from "react-router-dom";
 
+const calculateDistanceKm = (lat1, lon1, lat2, lon2) => {
+  if (!lat1 || !lon1 || !lat2 || !lon2) return 0;
+  const R = 6371;
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLon = (lon2 - lon1) * (Math.PI / 180);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * (Math.PI / 180)) *
+      Math.cos(lat2 * (Math.PI / 180)) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+};
+
+const parseCoverageRadiusKm = (radiusStr) => {
+  if (!radiusStr) return 50;
+  const match = radiusStr.match(/(\d+(\.\d+)?)/);
+  const val = match ? parseFloat(match[1]) : 50;
+  if (radiusStr.toLowerCase().includes("mile")) {
+    return val * 1.60934;
+  }
+  return val;
+};
+
 export const GarageDashboard = () => {
   const { currentUser } = useAuth();
   const { requests, transactions, withdrawGarageBalance, updateRequestStatus } = useRequests();
@@ -40,14 +65,22 @@ export const GarageDashboard = () => {
   const { formatAmount } = useCurrency();
   const navigate = useNavigate();
 
+  const garageGps = currentUser.gps || { lat: 37.7749, lng: -122.4194 };
+  const maxRadiusKm = parseCoverageRadiusKm(currentUser.coverageRadius);
+
   const parseFee = (feeStr) => {
     if (!feeStr) return 0;
     return parseFloat(feeStr.replace(/[^0-9.]/g, "")) || 0;
   };
-
-  // Filter requests that belong to this garage, or are pending in general (available to accept)
   const garageRequests = requests.filter((r) => r.garageId === currentUser.id);
-  const pendingQueue = requests.filter((r) => r.status === "pending" && !r.garageId && !r.isTowingRequest);
+  const pendingQueue = requests.filter((r) => {
+    if (r.status !== "pending" || r.garageId || r.isTowingRequest) return false;
+    if (r.gps && r.gps.lat && r.gps.lng) {
+      const dist = calculateDistanceKm(garageGps.lat, garageGps.lng, r.gps.lat, r.gps.lng);
+      return dist <= maxRadiusKm;
+    }
+    return true;
+  });
   const activeJobs = garageRequests.filter((r) => r.status !== "completed" && r.status !== "pending");
   const completedJobs = garageRequests.filter((r) => r.status === "completed");
 
