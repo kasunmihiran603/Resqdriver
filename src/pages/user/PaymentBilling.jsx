@@ -62,12 +62,20 @@ export const PaymentBilling = () => {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [lastTxnId, setLastTxnId] = useState("");
 
-  // Invoice calculations based on outstandingRequest fee
-  const rawFee = outstandingRequest ? parseFee(outstandingRequest.fee) : 0;
-
-  const dispatchCost = rawFee; // Total Travel Cost
-  const platformCommission = dispatchCost > 0 ? Math.round(dispatchCost * 0.10 * 100) / 100 : 0;
-  const dispatchFee = dispatchCost > 0 ? Math.round((dispatchCost - platformCommission) * 100) / 100 : 0;
+  // Invoice calculations based on the dispatch cost stored on the request.
+  // If the request has precomputed fields (set at acceptance time), use those;
+  // otherwise derive them from the raw fee string for older/seed data.
+  const dispatchCost = outstandingRequest
+    ? (outstandingRequest.dispatchCost ?? parseFee(outstandingRequest.fee))
+    : 0;
+  const platformCommission = outstandingRequest
+    ? (outstandingRequest.platformCommission ?? (dispatchCost > 0 ? Math.round(dispatchCost * 0.10 * 100) / 100 : 0))
+    : 0;
+  const providerShare = outstandingRequest
+    ? (outstandingRequest.providerShare ?? (dispatchCost > 0 ? Math.round((dispatchCost - platformCommission) * 100) / 100 : 0))
+    : 0;
+  // The 'Dispatch Fee' shown to user = the provider's share (dispatch cost minus platform cut)
+  const dispatchFee = providerShare;
   const grandTotal = dispatchCost;
 
   // Filter transactions belonging to this user
@@ -178,7 +186,7 @@ export const PaymentBilling = () => {
                     </div>
                     <h3 className="text-xl font-bold text-foreground">{formatAmount(parseFee(outstandingRequest.fee))}</h3>
                     <p className="text-xs text-muted-foreground">
-                      Service: <span className="font-semibold text-foreground">{outstandingRequest.category}</span>
+                      Incident Type: <span className="font-semibold text-foreground">{outstandingRequest.category}</span>
                     </p>
                     <p className="text-xs text-muted-foreground">
                       Provider: <span className="font-semibold text-foreground">{outstandingRequest.garageName}</span>

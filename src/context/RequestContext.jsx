@@ -179,6 +179,9 @@ export const RequestProvider = ({ children }) => {
     localStorage.setItem("vamp-notifications", JSON.stringify(newNotifs));
   };
 
+  // Platform commission rate applied to the dispatch cost
+  const PLATFORM_COMMISSION_RATE = 0.10;
+
   const createRequest = (requestData) => {
     const newRequest = {
       id: `req-${Date.now()}`,
@@ -189,7 +192,12 @@ export const RequestProvider = ({ children }) => {
       technician: null,
       towingId: null,
       eta: "Searching for helpers...",
-      fee: "$150.00",
+      // fee is calculated from distance at acceptance time, not at creation
+      fee: null,
+      dispatchCost: null,
+      platformCommission: null,
+      providerShare: null,
+      distance: null,
       ...requestData
     };
 
@@ -224,21 +232,31 @@ export const RequestProvider = ({ children }) => {
         else if (status === "repair_in_progress") defaultEta = "Under repair";
         else if (status === "completed") defaultEta = "Completed";
 
-        // Calculate dynamic travel/dispatch fee if transitioning to accepted
+        // Calculate Dispatch Cost when a provider accepts the request
+        // The dispatch cost is derived purely from distance × rate-per-km.
+        // Platform takes PLATFORM_COMMISSION_RATE of the dispatch cost;
+        // the remaining (1 - PLATFORM_COMMISSION_RATE) goes to the provider.
         let updatedFeeFields = {};
         if (status === "accepted") {
           const providerId = additionalFields.garageId || additionalFields.towingId;
           const users = JSON.parse(localStorage.getItem("vamp-users") || "[]");
           const provider = users.find((u) => u.id === providerId);
-          const rate = provider?.ratePerKM || (provider?.role === "towing" ? 200 : 150);
+          const ratePerKM = provider?.ratePerKM || (provider?.role === "towing" ? 200 : 150);
 
-          // Calculate Haversine distance
+          // Distance (km) between user GPS and provider GPS
           const distance = calculateHaversineDistance(req.gps, provider?.gps);
-          const totalCost = distance * rate;
+
+          // Dispatch Cost = distance × rate, scaled to a USD figure
+          const dispatchCost = Math.round((distance * ratePerKM) / 300.0 * 100) / 100;
+          const platformCommission = Math.round(dispatchCost * PLATFORM_COMMISSION_RATE * 100) / 100;
+          const providerShare = Math.round((dispatchCost - platformCommission) * 100) / 100;
 
           updatedFeeFields = {
-            fee: `$${(totalCost / 300.0).toFixed(2)}`,
-            distance: distance
+            fee: `$${dispatchCost.toFixed(2)}`,
+            dispatchCost,
+            platformCommission,
+            providerShare,
+            distance
           };
         }
 
