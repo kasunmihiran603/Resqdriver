@@ -1,13 +1,77 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 import { useAuth } from "../../context/AuthContext";
 import { useRequests } from "../../context/RequestContext";
 import { useToast } from "../../context/ToastContext";
 import { Card, CardHeader, CardTitle, CardContent } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import { Timeline } from "../../components/ui/Timeline";
-import { Navigation, Phone, Wrench, AlertTriangle, CheckCircle2, Truck, ChevronDown, ChevronUp } from "lucide-react";
+import { Navigation, Phone, Wrench, AlertTriangle, CheckCircle2, Truck, ChevronDown, ChevronUp, MapPin } from "lucide-react";
+
+import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
+import markerIcon from "leaflet/dist/images/marker-icon.png";
+import markerShadow from "leaflet/dist/images/marker-shadow.png";
+
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconUrl: markerIcon,
+  iconRetinaUrl: markerIcon2x,
+  shadowUrl: markerShadow,
+});
+
+const NearbyGaragesMap = ({ userGps }) => {
+  const mapRef = useRef(null);
+  const leafletMap = useRef(null);
+
+  useEffect(() => {
+    if (!mapRef.current) return;
+    const uGps = userGps || { lat: 37.7749, lng: -122.4194 };
+
+    const map = L.map(mapRef.current, { zoomControl: true }).setView([uGps.lat, uGps.lng], 13);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "&copy; OpenStreetMap"
+    }).addTo(map);
+
+    // User breakdown location marker
+    const userMarker = L.marker([uGps.lat, uGps.lng]).addTo(map);
+    userMarker.bindPopup("<b>📍 Your Breakdown Location</b>").openPopup();
+
+    // Fetch registered garages from localStorage and display markers for nearby partners
+    try {
+      const allUsers = JSON.parse(localStorage.getItem("vamp-users") || "[]");
+      const garages = allUsers.filter((u) => u.role === "garage");
+
+      garages.forEach((g) => {
+        if (g.gps && g.gps.lat && g.gps.lng) {
+          const gMarker = L.marker([g.gps.lat, g.gps.lng]).addTo(map);
+          gMarker.bindPopup(`<b>🔧 ${g.name}</b><br/>${g.address || "Available Service Center"}<br/><span style="color:#10b981;font-weight:bold;">Active Broadcast Partner</span>`);
+        }
+      });
+    } catch (e) {
+      const gMarker = L.marker([37.7749, -122.4194]).addTo(map);
+      gMarker.bindPopup("<b>🔧 Apex Auto Care</b><br/>Available Service Center");
+    }
+
+    const timer = setTimeout(() => {
+      if (map) map.invalidateSize();
+    }, 250);
+
+    leafletMap.current = map;
+
+    return () => {
+      clearTimeout(timer);
+      if (leafletMap.current) {
+        leafletMap.current.remove();
+        leafletMap.current = null;
+      }
+    };
+  }, [userGps]);
+
+  return <div ref={mapRef} className="w-full h-56 rounded-xl border border-border overflow-hidden z-0 relative" />;
+};
 
 // ─── Timeline builders ───────────────────────────────────────────────────────
 
@@ -359,18 +423,11 @@ const GarageTrackCard = ({ req, onCancel, focused }) => {
                   </Card>
                 )}
 
-                {/* GPS map widget */}
-                <Card className="border-border/80 overflow-hidden h-44 relative flex flex-col justify-center items-center">
-                  <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]" />
-                  <div className="relative flex items-center justify-center z-10">
-                    <span className="absolute inline-flex h-16 w-16 rounded-full bg-primary/20 animate-ping opacity-75" />
-                    <span className="absolute inline-flex h-10 w-10 rounded-full bg-primary/30 animate-pulse" />
-                    <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg border-2 border-background">
-                      <Navigation size={12} className="rotate-45" />
-                    </div>
-                  </div>
-                  <div className="absolute bottom-2 left-2 right-2 bg-card/90 backdrop-blur-xs p-1.5 rounded-lg border border-border/60 text-[9px] font-bold text-center z-10">
-                    Live Dispatch Stream active
+                {/* Interactive GPS map widget showing user location and nearby available garages */}
+                <Card className="border-border/80 overflow-hidden relative flex flex-col justify-center items-center">
+                  <NearbyGaragesMap userGps={req.gps} />
+                  <div className="absolute bottom-2 left-2 right-2 bg-card/90 backdrop-blur-xs p-1.5 rounded-lg border border-border/60 text-[9px] font-bold text-center z-10 pointer-events-none shadow-sm">
+                    📍 Live Dispatch Stream — Scanning Available Area Garages
                   </div>
                 </Card>
               </div>
