@@ -65,12 +65,10 @@ export const PaymentBilling = () => {
   // Invoice calculations based on outstandingRequest fee
   const rawFee = outstandingRequest ? parseFee(outstandingRequest.fee) : 0;
 
-  const towingFee = rawFee > 0 ? Math.round(rawFee * 0.4 * 100) / 100 : 0;
-  const repairCharge = rawFee > 0 ? Math.round(rawFee * 0.45 * 100) / 100 : 0;
-  const platformFee = rawFee > 0 ? Math.round(rawFee * 0.05 * 100) / 100 : 0;
-  const tax = rawFee > 0 ? Math.round(rawFee * 0.1 * 100) / 100 : 0;
-  const discount = 0;
-  const grandTotal = towingFee + repairCharge + platformFee + tax - discount;
+  const dispatchCost = rawFee; // Total Travel Cost
+  const platformCommission = dispatchCost > 0 ? Math.round(dispatchCost * 0.10 * 100) / 100 : 0;
+  const dispatchFee = dispatchCost > 0 ? Math.round((dispatchCost - platformCommission) * 100) / 100 : 0;
+  const grandTotal = dispatchCost;
 
   // Filter transactions belonging to this user
   const userTransactions = transactions.filter((t) => t.userId === currentUser?.id);
@@ -224,24 +222,12 @@ export const PaymentBilling = () => {
               </CardHeader>
               <CardContent className="p-5 space-y-3">
                 <div className="flex justify-between text-xs py-1 border-b border-border/40">
-                  <span className="text-muted-foreground">Towing & Transport Fee</span>
-                  <span className="font-bold text-foreground">{formatAmount(towingFee)}</span>
+                  <span className="text-muted-foreground">Dispatch Fee</span>
+                  <span className="font-bold text-foreground">{formatAmount(dispatchFee)}</span>
                 </div>
                 <div className="flex justify-between text-xs py-1 border-b border-border/40">
-                  <span className="text-muted-foreground">Repairs & Diagnostic Charge</span>
-                  <span className="font-bold text-foreground">{formatAmount(repairCharge)}</span>
-                </div>
-                <div className="flex justify-between text-xs py-1 border-b border-border/40">
-                  <span className="text-muted-foreground">Platform Dispatch Fee</span>
-                  <span className="font-bold text-foreground">{formatAmount(platformFee)}</span>
-                </div>
-                <div className="flex justify-between text-xs py-1 border-b border-border/40">
-                  <span className="text-muted-foreground">VAMP Discount Code</span>
-                  <span className="font-bold text-emerald-500">-{formatAmount(discount)}</span>
-                </div>
-                <div className="flex justify-between text-xs py-1 border-b border-border/40">
-                  <span className="text-muted-foreground">Tax (GST/VAT 10%)</span>
-                  <span className="font-bold text-foreground">{formatAmount(tax)}</span>
+                  <span className="text-muted-foreground">Platform Commission (10%)</span>
+                  <span className="font-bold text-foreground">{formatAmount(platformCommission)}</span>
                 </div>
                 <div className="flex justify-between text-sm pt-2 font-bold text-foreground">
                   <span>Grand Total</span>
@@ -510,16 +496,12 @@ export const PaymentBilling = () => {
             <CardContent className="p-5 space-y-4">
               <div className="space-y-2 text-xs">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Subtotal</span>
-                  <span className="font-semibold text-foreground">{formatAmount(rawFee - tax)}</span>
+                  <span className="text-muted-foreground">Dispatch Fee</span>
+                  <span className="font-semibold text-foreground">{formatAmount(dispatchFee)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Tax</span>
-                  <span className="font-semibold text-foreground">{formatAmount(tax)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Discount</span>
-                  <span className="font-semibold text-emerald-500">-{formatAmount(discount)}</span>
+                  <span className="text-muted-foreground">Platform Commission</span>
+                  <span className="font-semibold text-foreground">{formatAmount(platformCommission)}</span>
                 </div>
                 <div className="pt-2 border-t border-border flex justify-between text-sm font-bold text-foreground">
                   <span>Total Amount</span>

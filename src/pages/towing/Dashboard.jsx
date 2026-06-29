@@ -28,7 +28,7 @@ export const TowingDashboard = () => {
 
   const totalEarnings = completedJobs.reduce((acc, curr) => {
     const numeric = parseFee(curr.fee);
-    return acc + numeric;
+    return acc + (numeric * 0.90);
   }, 0);
 
   const handleAcceptJob = (reqId) => {

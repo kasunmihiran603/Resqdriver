@@ -1,9 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
 import { useRequests } from "../../context/RequestContext";
 import { useToast } from "../../context/ToastContext";
+import { useCurrency } from "../../context/CurrencyContext";
 import { Card, CardHeader, CardTitle, CardContent } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
@@ -42,6 +43,7 @@ export const UserTowingRequest = () => {
   const { currentUser } = useAuth();
   const { createRequest } = useRequests();
   const { showToast } = useToast();
+  const { formatAmount } = useCurrency();
   const navigate = useNavigate();
 
   const savedVehicles = currentUser?.vehicles || [];
@@ -60,6 +62,32 @@ export const UserTowingRequest = () => {
   const [dropoff, setDropoff] = useState("");
 
   const [notes, setNotes] = useState("");
+  const [estimatedCost, setEstimatedCost] = useState(0);
+  const [estimatedDistance, setEstimatedDistance] = useState(0);
+  const [estimatedRate, setEstimatedRate] = useState(200);
+
+  useEffect(() => {
+    if (!pickup.trim() || !dropoff.trim()) {
+      setEstimatedCost(0);
+      setEstimatedDistance(0);
+      return;
+    }
+
+    // Mock distance in km based on address character lengths
+    const distanceKm = Math.max(5, ((pickup.length + dropoff.length) % 20) + 4);
+
+    const users = JSON.parse(localStorage.getItem("vamp-users") || "[]");
+    const towingProviders = users.filter((u) => u.role === "towing");
+    const provider = towingProviders[0];
+    const rate = provider?.ratePerKM || 200;
+
+    const costInLKR = distanceKm * rate;
+    const costInUSD = costInLKR / 300.0;
+
+    setEstimatedDistance(distanceKm);
+    setEstimatedRate(rate);
+    setEstimatedCost(costInUSD);
+  }, [pickup, dropoff, vehicleChoice, incidentType]);
 
   const go = (next) => {
     setDirection(next > step ? 1 : -1);
@@ -99,7 +127,8 @@ export const UserTowingRequest = () => {
         status: "pending",
         towingId: null,
         garageId: null,
-        eta: "Searching for tow truck..."
+        eta: "Searching for tow truck...",
+        fee: estimatedCost > 0 ? `$${estimatedCost.toFixed(2)}` : "$5.00"
       });
       showToast("Towing request submitted! A driver will be assigned shortly.", "success");
       setSubmitting(false);
@@ -139,8 +168,8 @@ export const UserTowingRequest = () => {
             <React.Fragment key={s.number}>
               <div className="flex flex-col items-center gap-1.5">
                 <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-black border-2 transition-all ${done ? "bg-primary border-primary text-primary-foreground"
-                    : active ? "bg-card border-primary text-primary shadow-sm shadow-primary/20"
-                      : "bg-card border-border text-muted-foreground"
+                  : active ? "bg-card border-primary text-primary shadow-sm shadow-primary/20"
+                    : "bg-card border-border text-muted-foreground"
                   }`}>
                   {done ? <CheckCircle size={16} className="stroke-[2.5]" /> : s.number}
                 </div>
@@ -184,8 +213,8 @@ export const UserTowingRequest = () => {
                       key={t.id}
                       onClick={() => setIncidentType(t.id)}
                       className={`flex items-center gap-3 p-4 rounded-xl border text-left transition-all cursor-pointer ${incidentType === t.id
-                          ? `${t.bg} ring-2 ring-primary`
-                          : "border-border bg-muted/10 hover:bg-muted/30"
+                        ? `${t.bg} ring-2 ring-primary`
+                        : "border-border bg-muted/10 hover:bg-muted/30"
                         }`}
                     >
                       <div className={`shrink-0 ${incidentType === t.id ? t.color : "text-muted-foreground"}`}>
@@ -218,8 +247,8 @@ export const UserTowingRequest = () => {
                           key={v.id || idx}
                           onClick={() => setVehicleChoice(`saved-${idx}`)}
                           className={`w-full flex items-center gap-4 p-4 rounded-xl border text-left transition-all cursor-pointer ${vehicleChoice === `saved-${idx}`
-                              ? "border-primary bg-primary/5 ring-2 ring-primary"
-                              : "border-border bg-muted/10 hover:bg-muted/30"
+                            ? "border-primary bg-primary/5 ring-2 ring-primary"
+                            : "border-border bg-muted/10 hover:bg-muted/30"
                             }`}
                         >
                           <div className={`p-2.5 rounded-xl border shrink-0 ${vehicleChoice === `saved-${idx}` ? "bg-primary/10 border-primary/30 text-primary" : "bg-card border-border text-muted-foreground"
@@ -240,8 +269,8 @@ export const UserTowingRequest = () => {
                       <button
                         onClick={() => setVehicleChoice("manual")}
                         className={`w-full flex items-center gap-4 p-4 rounded-xl border text-left transition-all cursor-pointer ${vehicleChoice === "manual"
-                            ? "border-primary bg-primary/5 ring-2 ring-primary"
-                            : "border-dashed border-border bg-muted/5 hover:bg-muted/20"
+                          ? "border-primary bg-primary/5 ring-2 ring-primary"
+                          : "border-dashed border-border bg-muted/5 hover:bg-muted/20"
                           }`}
                       >
                         <div className="p-2.5 rounded-xl border bg-card border-border text-muted-foreground shrink-0">
@@ -445,6 +474,19 @@ export const UserTowingRequest = () => {
           </motion.div>
         </AnimatePresence>
       </div>
+
+      {/* Estimated Cost Display (only on Step 5 / Review) */}
+      {step === 5 && estimatedCost > 0 && (
+        <div className="flex flex-col p-4 bg-muted/40 border border-border/80 rounded-xl space-y-1 text-left">
+          <div className="flex justify-between items-center">
+            <span className="text-xs font-bold text-muted-foreground">Estimated Dispatch Fee:</span>
+            <span className="text-base font-black text-primary">{formatAmount(estimatedCost)}</span>
+          </div>
+          <p className="text-[10px] text-muted-foreground/80 font-medium">
+            Calculated dynamically: {estimatedDistance} km to closest depot @ LKR {estimatedRate}/km.
+          </p>
+        </div>
+      )}
 
       {/* Nav Buttons */}
       <div className="flex gap-3 pb-4">

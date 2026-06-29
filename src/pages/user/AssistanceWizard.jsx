@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useRequests } from "../../context/RequestContext";
 import { useToast } from "../../context/ToastContext";
+import { useCurrency } from "../../context/CurrencyContext";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import { Input, Textarea } from "../../components/ui/Input";
@@ -36,12 +37,16 @@ export const AssistanceWizard = () => {
   const { currentUser } = useAuth();
   const { createRequest, requests, updateRequestStatus } = useRequests();
   const { showToast } = useToast();
+  const { formatAmount } = useCurrency();
   const location = useLocation();
   const navigate = useNavigate();
 
   // Wizard state: 1 (Category), 2 (Diagnostics), 3 (Decision Hub), 4 (Form), 5 (Tracking)
   const [step, setStep] = useState(1);
-  
+  const [estimatedCost, setEstimatedCost] = useState(0);
+  const [estimatedDistance, setEstimatedDistance] = useState(0);
+  const [estimatedRate, setEstimatedRate] = useState(150);
+
   // Selections
   const [category, setCategory] = useState("");
   const [selectedSymptoms, setSelectedSymptoms] = useState([]);
@@ -55,7 +60,7 @@ export const AssistanceWizard = () => {
   const [voiceNoteDuration, setVoiceNoteDuration] = useState(0);
   const [isRecording, setIsRecording] = useState(false);
   const [hasVoiceNote, setHasVoiceNote] = useState(false);
-  
+
   // AI Drawer state
   const [isAiOpen, setIsAiOpen] = useState(false);
   const [aiChat, setAiChat] = useState([]);
@@ -64,6 +69,49 @@ export const AssistanceWizard = () => {
 
   // Active tracking state
   const [activeRequest, setActiveRequest] = useState(null);
+
+  useEffect(() => {
+    // Calculate estimated cost strictly based on travel distance to the closest garage
+    const users = JSON.parse(localStorage.getItem("vamp-users") || "[]");
+    const garages = users.filter((u) => u.role === "garage");
+
+    let closestGarage = null;
+    let minDistance = Infinity;
+
+    const calculateDistance = (coords1, coords2) => {
+      if (!coords1 || !coords2) return 8.5;
+      const R = 6371; // radius of Earth in km
+      const dLat = ((coords2.lat - coords1.lat) * Math.PI) / 180;
+      const dLon = ((coords2.lng - coords1.lng) * Math.PI) / 180;
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos((coords1.lat * Math.PI) / 180) *
+        Math.cos((coords2.lat * Math.PI) / 180) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
+    };
+
+    garages.forEach((g) => {
+      if (g.gps) {
+        const dist = calculateDistance(gpsSim, g.gps);
+        if (dist < minDistance) {
+          minDistance = dist;
+          closestGarage = g;
+        }
+      }
+    });
+
+    const distanceKm = minDistance === Infinity ? 8.5 : Math.round(minDistance * 10) / 10;
+    const rate = closestGarage?.ratePerKM || 150;
+    const costInLKR = distanceKm * rate;
+    const costInUSD = costInLKR / 300.0; // convert to USD base for formatAmount
+
+    setEstimatedDistance(distanceKm);
+    setEstimatedRate(rate);
+    setEstimatedCost(costInUSD);
+  }, [gpsSim]);
 
   // Auto-advance to diagnostics step if a category was pre-selected via routing
   useEffect(() => {
@@ -193,7 +241,7 @@ export const AssistanceWizard = () => {
   // Submit emergency assistance request
   const handleSubmitRequest = () => {
     const vehicleObj = currentUser.vehicles.find((v) => v.id === selectedVehicle) || currentUser.vehicles[0];
-    
+
     if (!locationName.trim()) {
       showToast("Please enter your current location description.", "error");
       return;
@@ -215,7 +263,8 @@ export const AssistanceWizard = () => {
       location: locationName,
       gps: gpsSim,
       imageSimulated: uploadedImages.length > 0,
-      audioSimulated: hasVoiceNote
+      audioSimulated: hasVoiceNote,
+      fee: estimatedCost > 0 ? `$${estimatedCost.toFixed(2)}` : "$5.00"
     };
 
     createRequest(payload);
@@ -254,7 +303,7 @@ export const AssistanceWizard = () => {
 
   return (
     <div className="space-y-6 text-left max-w-4xl mx-auto">
-      
+
       {/* Back to dashboard button (only if not tracking active job) */}
       {step < 5 && (
         <button
@@ -292,7 +341,7 @@ export const AssistanceWizard = () => {
             <h3 className="text-xl font-bold tracking-tight text-foreground">Select Problem Category</h3>
             <p className="text-sm text-muted-foreground mt-0.5">Which component of the vehicle seems faulty?</p>
           </div>
-          
+
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {categories.map((cat, idx) => (
               <Card
@@ -338,15 +387,13 @@ export const AssistanceWizard = () => {
                       key={idx}
                       type="button"
                       onClick={() => toggleSymptom(symptom)}
-                      className={`flex items-start text-left gap-3 p-3.5 rounded-xl border transition-all cursor-pointer select-none ${
-                        isChecked
-                          ? "border-primary bg-primary/[0.04] text-foreground font-semibold"
-                          : "border-border bg-card text-muted-foreground hover:bg-muted/30"
-                      }`}
+                      className={`flex items-start text-left gap-3 p-3.5 rounded-xl border transition-all cursor-pointer select-none ${isChecked
+                        ? "border-primary bg-primary/[0.04] text-foreground font-semibold"
+                        : "border-border bg-card text-muted-foreground hover:bg-muted/30"
+                        }`}
                     >
-                      <div className={`mt-0.5 w-5 h-5 rounded-md border flex items-center justify-center shrink-0 ${
-                        isChecked ? "border-primary bg-primary text-primary-foreground" : "border-muted-foreground/30 bg-card"
-                      }`}>
+                      <div className={`mt-0.5 w-5 h-5 rounded-md border flex items-center justify-center shrink-0 ${isChecked ? "border-primary bg-primary text-primary-foreground" : "border-muted-foreground/30 bg-card"
+                        }`}>
                         {isChecked && <Check size={12} className="stroke-[3]" />}
                       </div>
                       <span className="text-xs sm:text-sm">{symptom}</span>
@@ -382,7 +429,7 @@ export const AssistanceWizard = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            
+
             {/* AI drawer trigger */}
             <Card hoverable className="border-primary/20 bg-primary/[0.01] hover:border-primary/40 flex flex-col justify-between h-full">
               <CardHeader className="pb-3 text-left">
@@ -432,10 +479,10 @@ export const AssistanceWizard = () => {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            
+
             {/* Form Inputs (Left side) */}
             <div className="lg:col-span-2 space-y-4">
-              
+
               {/* Vehicle Select */}
               <Select
                 label="Select Affected Vehicle"
@@ -461,7 +508,7 @@ export const AssistanceWizard = () => {
 
               {/* Image & Audio Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                
+
                 {/* Visual attachments dropzone */}
                 <div className="flex flex-col gap-1.5 text-left">
                   <label className="text-sm font-semibold text-foreground">Attach Photos</label>
@@ -516,7 +563,7 @@ export const AssistanceWizard = () => {
                         )}
                       </div>
                     )}
-                    
+
                     <Button
                       onClick={handleToggleVoiceRecord}
                       size="sm"
@@ -544,13 +591,13 @@ export const AssistanceWizard = () => {
             <div className="space-y-4">
               <div className="flex flex-col gap-1.5 text-left">
                 <label className="text-sm font-semibold text-foreground">Emergency GPS Coordinates</label>
-                
+
                 {/* Mock Map Image UI */}
                 <div className="border border-border rounded-xl h-56 relative overflow-hidden bg-sky-100 dark:bg-slate-900 border-b-0 rounded-b-none flex flex-col justify-center items-center text-center">
                   <div className="absolute inset-0 opacity-30 bg-cover bg-center pointer-events-none" style={{ backgroundImage: "url('/maps-bg.png')" }} />
                   {/* Grid Lines simulation */}
                   <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]" />
-                  
+
                   {/* Pin Indicator */}
                   <motion.div
                     animate={{ y: [0, -6, 0] }}
@@ -582,6 +629,19 @@ export const AssistanceWizard = () => {
 
           </div>
 
+          {/* Estimated Cost Display */}
+          {estimatedCost > 0 && (
+            <div className="flex flex-col p-4 bg-muted/40 border border-border/80 rounded-xl mb-4 space-y-1 text-left">
+              <div className="flex justify-between items-center">
+                <span className="text-xs font-bold text-muted-foreground">Estimated Dispatch Fee:</span>
+                <span className="text-base font-black text-primary">{formatAmount(estimatedCost)}</span>
+              </div>
+              <p className="text-[10px] text-muted-foreground/80 font-medium">
+                Calculated dynamically: {estimatedDistance} km to closest garage @ LKR {estimatedRate}/km.
+              </p>
+            </div>
+          )}
+
           {/* Submit button — always visible at the bottom */}
           <div className="pt-2 border-t border-border">
             <Button onClick={handleSubmitRequest} className="w-full flex items-center justify-center gap-2 h-12 text-base font-bold">
@@ -595,7 +655,7 @@ export const AssistanceWizard = () => {
       {/* STEP 5: LIVE REQUEST TRACKING */}
       {step === 5 && activeRequest && (
         <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-          
+
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-border pb-4">
             <div>
               <span className="text-[10px] bg-rose-500/10 text-rose-500 px-2 py-0.5 rounded font-extrabold uppercase tracking-wider border border-rose-500/20">
@@ -604,7 +664,7 @@ export const AssistanceWizard = () => {
               <h2 className="text-2xl font-black text-foreground mt-1.5">{activeRequest.category} Dispatch</h2>
               <p className="text-xs text-muted-foreground mt-0.5">ID: {activeRequest.id} • Registered {new Date(activeRequest.timestamp).toLocaleTimeString()}</p>
             </div>
-            
+
             {/* Action buttons */}
             <div className="flex items-center gap-2">
               <a
@@ -633,10 +693,10 @@ export const AssistanceWizard = () => {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            
+
             {/* Status updates, Timeline, Garage card */}
             <div className="lg:col-span-2 space-y-6">
-              
+
               {/* ETA Highlight */}
               <Card className="bg-primary/5 border-primary/20 relative overflow-hidden">
                 <CardContent className="p-5 flex items-center justify-between gap-4">
@@ -664,7 +724,7 @@ export const AssistanceWizard = () => {
 
             {/* Side summary of mechanic and maps */}
             <div className="space-y-6">
-              
+
               {/* Garage card details */}
               {activeRequest.garageName ? (
                 <Card className="border-border/80 text-left">
@@ -673,7 +733,7 @@ export const AssistanceWizard = () => {
                     <h3 className="text-lg font-bold text-foreground mt-0.5">{activeRequest.garageName}</h3>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    
+
                     {/* Mechanic contact */}
                     {activeRequest.technician ? (
                       <div className="p-3.5 bg-muted/50 rounded-xl border flex items-center gap-3">
@@ -720,7 +780,7 @@ export const AssistanceWizard = () => {
               <Card className="border-border/80 overflow-hidden h-60 relative flex flex-col justify-center items-center">
                 <div className="absolute inset-0 opacity-20 bg-cover bg-center pointer-events-none" style={{ backgroundImage: "url('/maps-bg.png')" }} />
                 <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]" />
-                
+
                 {/* Center marker */}
                 <div className="relative flex items-center justify-center z-10">
                   {/* Outer waves */}
@@ -755,17 +815,16 @@ export const AssistanceWizard = () => {
               const isAi = msg.sender === "ai";
               return (
                 <div key={idx} className={`flex ${isAi ? "justify-start" : "justify-end"}`}>
-                  <div className={`max-w-[85%] p-3.5 rounded-2xl text-xs sm:text-sm leading-relaxed ${
-                    isAi
-                      ? "bg-muted text-foreground rounded-tl-xs whitespace-pre-line border border-border/40"
-                      : "bg-primary text-primary-foreground rounded-tr-xs shadow-md"
-                  }`}>
+                  <div className={`max-w-[85%] p-3.5 rounded-2xl text-xs sm:text-sm leading-relaxed ${isAi
+                    ? "bg-muted text-foreground rounded-tl-xs whitespace-pre-line border border-border/40"
+                    : "bg-primary text-primary-foreground rounded-tr-xs shadow-md"
+                    }`}>
                     {msg.text}
                   </div>
                 </div>
               );
             })}
-            
+
             {isAiTyping && (
               <div className="flex justify-start">
                 <div className="bg-muted text-foreground p-3.5 rounded-2xl rounded-tl-xs flex items-center gap-1.5">

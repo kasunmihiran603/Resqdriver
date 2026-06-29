@@ -73,6 +73,7 @@ export const TowingProfile = () => {
           <InfoRow icon={<MapPin size={16} />} label="Base / Depot Address" value={currentUser?.address || "Not provided"} />
           <InfoRow icon={<Clock size={16} />} label="Operating Hours" value={currentUser?.hours || "Not provided"} />
           <InfoRow icon={<Award size={16} />} label="Service Coverage Area" value={currentUser?.coverageRadius || "Not provided"} />
+          <InfoRow icon={<Award size={16} />} label="Rate Per KM" value={currentUser?.ratePerKM ? `LKR ${currentUser.ratePerKM}/km` : "Not provided"} />
         </CardContent>
       </Card>
 

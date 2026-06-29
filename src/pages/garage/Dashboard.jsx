@@ -54,22 +54,22 @@ export const GarageDashboard = () => {
   const paidJobs = completedJobs.filter((r) => r.paymentStatus === "paid");
   const unpaidJobs = completedJobs.filter((r) => r.paymentStatus === "unpaid");
 
-  // Sum revenue
+  // Sum revenue (90% allocated to garage, 10% admin commission)
   const totalRevenue = completedJobs.reduce((acc, curr) => {
     const numeric = parseFee(curr.fee);
-    return acc + numeric;
+    return acc + (numeric * 0.90);
   }, 0);
 
-  // Sum earned revenue (completed and paid)
+  // Sum earned revenue (completed and paid, 90% allocated to garage)
   const garageEarnings = paidJobs.reduce((acc, curr) => {
     const numeric = parseFee(curr.fee);
-    return acc + numeric;
+    return acc + (numeric * 0.90);
   }, 0);
 
-  // Sum pending payments (completed and unpaid)
+  // Sum pending payments (completed and unpaid, 90% allocated to garage)
   const pendingCustomerPayments = unpaidJobs.reduce((acc, curr) => {
     const numeric = parseFee(curr.fee);
-    return acc + numeric;
+    return acc + (numeric * 0.90);
   }, 0);
 
   const [withdrawnTotal, setWithdrawnTotal] = useState(() => {

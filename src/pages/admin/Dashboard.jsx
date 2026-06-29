@@ -61,10 +61,10 @@ export const AdminDashboard = () => {
     return acc + numeric;
   }, 0);
 
-  // Platform Revenue
+  // Platform Revenue (10% Admin Commission)
   const totalRevenue = transactions.reduce((acc, curr) => {
     const numeric = parseFee(curr.amount);
-    return acc + numeric;
+    return acc + (numeric * 0.10);
   }, 0);
 
   // Pending Payments
@@ -82,7 +82,7 @@ export const AdminDashboard = () => {
     })
     .reduce((acc, curr) => {
       const numeric = parseFee(curr.amount);
-      return acc + numeric;
+      return acc + (numeric * 0.10);
     }, 0);
 
   const revenueTrends = [

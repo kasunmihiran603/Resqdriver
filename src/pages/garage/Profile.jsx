@@ -72,6 +72,7 @@ export const GarageProfile = () => {
           <InfoRow icon={<MapPin size={16} />} label="Workshop Address" value={currentUser?.address || "Not provided"} />
           <InfoRow icon={<Clock size={16} />} label="Business Hours" value={currentUser?.hours || "Not provided"} />
           <InfoRow icon={<Award size={16} />} label="Coverage Radius" value={currentUser?.coverageRadius || "Not provided"} />
+          <InfoRow icon={<Award size={16} />} label="Rate Per KM" value={currentUser?.ratePerKM ? `LKR ${currentUser.ratePerKM}/km` : "Not provided"} />
         </CardContent>
       </Card>
 
