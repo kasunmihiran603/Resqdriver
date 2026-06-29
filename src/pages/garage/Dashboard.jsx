@@ -128,7 +128,7 @@ export const GarageDashboard = () => {
 
   return (
     <div className="space-y-6 text-left">
-      
+
       {/* Welcome & Info */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -142,7 +142,7 @@ export const GarageDashboard = () => {
 
       {/* Metrics Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        
+
         {/* Metric 1 */}
         <Card className="border-border/80">
           <CardContent className="p-5 flex items-center justify-between">
@@ -203,7 +203,7 @@ export const GarageDashboard = () => {
 
       {/* Recharts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
+
         {/* Chart 1: Request & Resolution Trends */}
         <Card className="lg:col-span-2 border-border/80">
           <CardHeader>
@@ -255,7 +255,7 @@ export const GarageDashboard = () => {
                 <Tooltip />
               </PieChart>
             </ResponsiveContainer>
-            
+
             {/* Custom Legends */}
             <div className="flex gap-4 text-[10px] font-bold text-muted-foreground mt-2">
               {statusSplit.map((s, idx) => (
@@ -271,7 +271,7 @@ export const GarageDashboard = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
+
         {/* Technician workload load bar chart */}
         <Card className="lg:col-span-1 border-border/80">
           <CardHeader>
@@ -340,7 +340,7 @@ export const GarageDashboard = () => {
       {/* Financial Overview & Payments Section */}
       <div className="space-y-3 text-left">
         <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Financial Ledger & Withdrawals</h3>
-        
+
         {/* Earnings Metrics Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card className="border-border/80">
