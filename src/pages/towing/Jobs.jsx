@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 import { useAuth } from "../../context/AuthContext";
 import { useRequests } from "../../context/RequestContext";
 import { useToast } from "../../context/ToastContext";
@@ -6,8 +8,65 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../..
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { Modal } from "../../components/ui/Modal";
-import { Truck, MapPin, Phone, Clock, Navigation, Compass, AlertCircle, Check } from "lucide-react";
+import { Truck, MapPin, Phone, Clock, Navigation, Compass, AlertCircle, Check, Radio } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+
+import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
+import markerIcon from "leaflet/dist/images/marker-icon.png";
+import markerShadow from "leaflet/dist/images/marker-shadow.png";
+
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconUrl: markerIcon,
+  iconRetinaUrl: markerIcon2x,
+  shadowUrl: markerShadow,
+});
+
+const TowingRouteMap = ({ pickupGps, dropoffGps, pickupLabel, dropoffLabel }) => {
+  const mapRef = useRef(null);
+  const leafletMap = useRef(null);
+
+  useEffect(() => {
+    if (!mapRef.current) return;
+
+    const pGps = pickupGps || { lat: 37.7749, lng: -122.4194 };
+    const dGps = dropoffGps || { lat: 37.7845, lng: -122.4012 };
+
+    const map = L.map(mapRef.current, { zoomControl: true }).setView([pGps.lat, pGps.lng], 13);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "&copy; OpenStreetMap"
+    }).addTo(map);
+
+    const markerA = L.marker([pGps.lat, pGps.lng]).addTo(map);
+    markerA.bindPopup(`<b>Pickup Location (A)</b><br/>${pickupLabel || ""}`).openPopup();
+
+    const markerB = L.marker([dGps.lat, dGps.lng]).addTo(map);
+    markerB.bindPopup(`<b>Dropoff Destination (B)</b><br/>${dropoffLabel || ""}`);
+
+    try {
+      const bounds = L.latLngBounds([pGps.lat, pGps.lng], [dGps.lat, dGps.lng]);
+      map.fitBounds(bounds, { padding: [40, 40] });
+    } catch (e) {
+      // ignore fit bounds if identical
+    }
+
+    const timer = setTimeout(() => {
+      if (map) map.invalidateSize();
+    }, 250);
+
+    leafletMap.current = map;
+
+    return () => {
+      clearTimeout(timer);
+      if (leafletMap.current) {
+        leafletMap.current.remove();
+        leafletMap.current = null;
+      }
+    };
+  }, [pickupGps, dropoffGps, pickupLabel, dropoffLabel]);
+
+  return <div ref={mapRef} className="w-full h-full min-h-[300px] rounded-xl border border-border overflow-hidden z-0 relative" />;
+};
 
 export const TowingJobs = () => {
   const { currentUser } = useAuth();
@@ -17,7 +76,23 @@ export const TowingJobs = () => {
 
   const towingJobs = requests.filter((r) => r.towingId === currentUser.id);
   const activeJob = towingJobs.find((r) => r.status !== "completed");
+  const unclaimedTows = requests.filter(
+    (r) => r.status === "pending" && !r.towingId && (r.isTowingRequest || r.category === "Accident")
+  );
   const [customEta, setCustomEta] = useState("");
+
+  const handleAcceptTow = (reqId) => {
+    if (activeJob) {
+      showToast("Complete your active tow job before accepting another.", "error");
+      return;
+    }
+    updateRequestStatus(reqId, "accepted", {
+      towingId: currentUser.id,
+      towingName: currentUser.name,
+      eta: "18 mins"
+    });
+    showToast("Tow job accepted! Controls are ready below.", "success");
+  };
 
   const handleUpdateStatus = (status, msg) => {
     const fields = {};
@@ -62,6 +137,57 @@ export const TowingJobs = () => {
         <p className="text-sm text-muted-foreground mt-0.5">Manage active recovery coordinates and towing transit updates.</p>
       </div>
 
+      {/* Available tow requests section — always visible if any exist */}
+      {unclaimedTows.length > 0 && (
+        <Card className="border-amber-500/30 bg-amber-500/[0.02]">
+          <CardHeader className="pb-3 border-b border-amber-500/20">
+            <div className="flex items-center gap-2">
+              <Radio size={16} className="text-amber-500 animate-pulse" />
+              <CardTitle className="text-base font-bold">Available Tow Requests</CardTitle>
+              <span className="text-xs text-amber-500 font-bold bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full">
+                {unclaimedTows.length} nearby
+              </span>
+            </div>
+          </CardHeader>
+          <CardContent className="p-0 divide-y divide-border/60">
+            {unclaimedTows.map((req) => (
+              <div key={req.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-muted/10 transition-colors">
+                <div className="space-y-1 text-left">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[9px] font-black uppercase text-amber-500 bg-amber-500/10 border border-amber-500/25 px-1.5 py-0.5 rounded">
+                      {req.category}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground">ID: {req.id}</span>
+                  </div>
+                  <h4 className="font-extrabold text-sm text-foreground">
+                    {req.vehicle.make} {req.vehicle.model} {req.vehicle.year && `(${req.vehicle.year})`}
+                  </h4>
+                  <p className="text-xs text-foreground font-semibold flex items-center gap-1">
+                    <MapPin size={12} className="text-muted-foreground shrink-0" /> {req.location}
+                  </p>
+                  {req.destination && (
+                    <p className="text-xs text-muted-foreground">
+                      Drop-off: <span className="font-semibold text-foreground">{req.destination}</span>
+                    </p>
+                  )}
+                  {req.description && req.description !== "No additional notes." && (
+                    <p className="text-[11px] text-muted-foreground/80 italic truncate max-w-sm">"{req.description}"</p>
+                  )}
+                </div>
+                <Button
+                  onClick={() => handleAcceptTow(req.id)}
+                  size="sm"
+                  className="shrink-0 h-9 text-xs px-4"
+                  disabled={!!activeJob}
+                >
+                  Accept Tow
+                </Button>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
       {activeJob ? (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
@@ -93,7 +219,7 @@ export const TowingJobs = () => {
                   <div className="relative pt-2">
                     <span className="absolute -left-6 top-2.5 w-4.5 h-4.5 rounded-full bg-emerald-500 border-2 border-background flex items-center justify-center text-white text-[8px] font-bold">B</span>
                     <p className="text-[10px] text-muted-foreground font-bold uppercase">Destination Dropoff</p>
-                    <p className="font-bold text-foreground text-sm leading-relaxed">Apex Auto Care (1028 Industrial Blvd)</p>
+                    <p className="font-bold text-foreground text-sm leading-relaxed">{activeJob.destination || "Destination not specified"}</p>
                   </div>
                 </div>
 
@@ -181,25 +307,20 @@ export const TowingJobs = () => {
           {/* Maps tracking interface (Right side) */}
           <div className="space-y-6">
             
-            {/* Visual map route indicator */}
+            {/* Interactive Towing Route Map */}
             <Card className="border-border/80 overflow-hidden h-72 relative flex flex-col justify-center items-center">
-              <div className="absolute inset-0 opacity-20 bg-cover bg-center pointer-events-none" style={{ backgroundImage: "url('/maps-bg.png')" }} />
-              <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]" />
-              
-              {/* Pulse and compass */}
-              <div className="relative flex items-center justify-center z-10">
-                <span className="absolute inline-flex h-24 w-24 rounded-full bg-rose-500/10 animate-ping opacity-60" />
-                <span className="absolute inline-flex h-14 w-14 rounded-full bg-rose-500/20 animate-pulse" />
-                <div className="w-10 h-10 rounded-full bg-rose-500 text-white flex items-center justify-center shadow-lg border-2 border-background">
-                  <Compass size={16} className="animate-spin-slow" />
-                </div>
-              </div>
+              <TowingRouteMap
+                pickupGps={activeJob.gps}
+                dropoffGps={activeJob.destinationGps}
+                pickupLabel={activeJob.location}
+                dropoffLabel={activeJob.destination || "Destination"}
+              />
 
-              <div className="absolute bottom-2 left-2 right-2 bg-card/90 backdrop-blur-xs p-2 rounded-lg border border-border/60 text-[10px] font-bold text-center z-10 space-y-0.5">
-                <p className="text-foreground">GPS Route Navigation locking active</p>
+              <div className="absolute bottom-2 left-2 right-2 bg-card/90 backdrop-blur-xs p-2 rounded-lg border border-border/60 text-[10px] font-bold text-center z-10 pointer-events-none shadow-md space-y-0.5">
+                <p className="text-foreground font-semibold">Live GPS Route Lock Active</p>
                 {activeJob.status === "on_the_way" && (
-                  <p className="text-primary uppercase tracking-wider text-[8px] font-extrabold">
-                    Distance to Pickup: {distanceSim} miles
+                  <p className="text-primary uppercase tracking-wider text-[9px] font-black">
+                    Est. Distance to Pickup: {distanceSim} miles
                   </p>
                 )}
               </div>

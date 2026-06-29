@@ -27,16 +27,21 @@ const seedRequests = () => {
         gps: { lat: 37.7749, lng: -122.4194 },
         imageSimulated: false,
         audioSimulated: false,
-        status: "on_the_way", // pending, accepted, technician_assigned, on_the_way, repair_in_progress, completed
+        status: "on_the_way",
         paymentStatus: "unpaid",
         garageId: "grg-1",
         garageName: "Apex Auto Care",
         technician: { id: "tech-1", name: "James R.", phone: "+1 (555) 018-9901" },
         towingId: null,
         eta: "14 mins",
+<<<<<<< HEAD
         timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString(), // 30 mins ago
         fee: "LKR 1275.00",
         distance: 8.5
+=======
+        timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
+        fee: "$240.00"
+>>>>>>> 50bb981a01cbeb021f801ec1b45f60fe3d27db30
       },
       {
         id: "req-2",
@@ -58,9 +63,14 @@ const seedRequests = () => {
         technician: { id: "tech-3", name: "David K.", phone: "+1 (555) 018-9903" },
         towingId: null,
         eta: "Completed",
+<<<<<<< HEAD
         timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
         fee: "LKR 750.00",
         distance: 5.0
+=======
+        timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+        fee: "$85.00"
+>>>>>>> 50bb981a01cbeb021f801ec1b45f60fe3d27db30
       },
       {
         id: "req-3",
@@ -82,9 +92,14 @@ const seedRequests = () => {
         towingName: "Rapid Towing & Recovery",
         technician: null,
         eta: "Pending Driver Assignment",
+<<<<<<< HEAD
         timestamp: new Date(Date.now() - 5 * 60 * 1000).toISOString(), // 5 mins ago
         fee: "LKR 1800.00",
         distance: 9.0
+=======
+        timestamp: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+        fee: "$180.00"
+>>>>>>> 50bb981a01cbeb021f801ec1b45f60fe3d27db30
       },
       {
         id: "req-4",
@@ -106,9 +121,14 @@ const seedRequests = () => {
         technician: { id: "tech-1", name: "James R.", phone: "+1 (555) 018-9901" },
         towingId: null,
         eta: "Completed",
+<<<<<<< HEAD
         timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
         fee: "LKR 1500.00",
         distance: 10.0
+=======
+        timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+        fee: "$150.00"
+>>>>>>> 50bb981a01cbeb021f801ec1b45f60fe3d27db30
       }
     ];
     localStorage.setItem("vamp-requests", JSON.stringify(defaultRequests));
@@ -140,18 +160,28 @@ const seedTransactions = () => {
 export const RequestProvider = ({ children }) => {
   const [requests, setRequests] = useState([]);
   const [transactions, setTransactions] = useState([]);
+  const [notifications, setNotifications] = useState([]);
 
   useEffect(() => {
     seedRequests();
     seedTransactions();
     const storedReqs = localStorage.getItem("vamp-requests");
-    if (storedReqs) {
-      setRequests(JSON.parse(storedReqs));
-    }
+    if (storedReqs) setRequests(JSON.parse(storedReqs));
     const storedTxns = localStorage.getItem("vamp-transactions");
-    if (storedTxns) {
-      setTransactions(JSON.parse(storedTxns));
-    }
+    if (storedTxns) setTransactions(JSON.parse(storedTxns));
+    const storedNotifs = localStorage.getItem("vamp-notifications");
+    if (storedNotifs) setNotifications(JSON.parse(storedNotifs));
+  }, []);
+
+  // Cross-tab sync: when another browser tab updates localStorage, reflect it here
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      if (e.key === "vamp-requests") setRequests(JSON.parse(e.newValue || "[]"));
+      if (e.key === "vamp-transactions") setTransactions(JSON.parse(e.newValue || "[]"));
+      if (e.key === "vamp-notifications") setNotifications(JSON.parse(e.newValue || "[]"));
+    };
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
 
   const updateLocalStorage = (newRequests) => {
@@ -164,6 +194,11 @@ export const RequestProvider = ({ children }) => {
     localStorage.setItem("vamp-transactions", JSON.stringify(newTransactions));
   };
 
+  const updateNotificationsStorage = (newNotifs) => {
+    setNotifications(newNotifs);
+    localStorage.setItem("vamp-notifications", JSON.stringify(newNotifs));
+  };
+
   const createRequest = (requestData) => {
     const newRequest = {
       id: `req-${Date.now()}`,
@@ -174,7 +209,7 @@ export const RequestProvider = ({ children }) => {
       technician: null,
       towingId: null,
       eta: "Searching for helpers...",
-      fee: "$150.00", // baseline estimated fee
+      fee: "$150.00",
       ...requestData
     };
 
@@ -202,7 +237,6 @@ export const RequestProvider = ({ children }) => {
   const updateRequestStatus = (requestId, status, additionalFields = {}) => {
     const updated = requests.map((req) => {
       if (req.id === requestId) {
-        // Handle custom ETA messages based on status changes if not provided
         let defaultEta = req.eta;
         if (status === "accepted") defaultEta = "Assigning tech...";
         else if (status === "technician_assigned") defaultEta = "25 mins";
@@ -239,6 +273,33 @@ export const RequestProvider = ({ children }) => {
       return req;
     });
     updateLocalStorage(updated);
+
+    // Create a notification for the user when their request is accepted
+    if (status === "accepted") {
+      const targetReq = requests.find((r) => r.id === requestId);
+      if (targetReq?.userId) {
+        const existingNotifs = JSON.parse(localStorage.getItem("vamp-notifications") || "[]");
+        const alreadyNotified = existingNotifs.some(
+          (n) => n.requestId === requestId && (n.type === "accepted" || n.type === "tow_accepted")
+        );
+        if (!alreadyNotified) {
+          const isTow = targetReq.isTowingRequest === true;
+          const notif = {
+            id: `notif-${Date.now()}`,
+            userId: targetReq.userId,
+            type: isTow ? "tow_accepted" : "accepted",
+            title: isTow ? "Tow Truck Accepted Your Request" : "Garage Accepted Your Request",
+            message: isTow
+              ? `${additionalFields.towingName || "A tow truck driver"} has accepted your ${targetReq.category} tow request and is heading to your location.`
+              : `${additionalFields.garageName || "A nearby garage"} has accepted your ${targetReq.category} request and is preparing assistance.`,
+            timestamp: new Date().toISOString(),
+            read: false,
+            requestId
+          };
+          updateNotificationsStorage([notif, ...existingNotifs]);
+        }
+      }
+    }
   };
 
   const confirmPayment = (requestId, paymentMethod) => {
@@ -286,16 +347,31 @@ export const RequestProvider = ({ children }) => {
     return [];
   };
 
+  const dismissNotification = (notifId) => {
+    const updated = notifications.filter((n) => n.id !== notifId);
+    updateNotificationsStorage(updated);
+  };
+
+  const markAllNotificationsRead = (userId) => {
+    const updated = notifications.map((n) =>
+      n.userId === userId ? { ...n, read: true } : n
+    );
+    updateNotificationsStorage(updated);
+  };
+
   return (
     <RequestContext.Provider
       value={{
         requests,
         transactions,
+        notifications,
         createRequest,
         updateRequestStatus,
         confirmPayment,
         withdrawGarageBalance,
-        getRequestsByRole
+        getRequestsByRole,
+        dismissNotification,
+        markAllNotificationsRead
       }}
     >
       {children}

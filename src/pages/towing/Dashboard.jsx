@@ -1,12 +1,72 @@
-import React from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 import { useAuth } from "../../context/AuthContext";
 import { useRequests } from "../../context/RequestContext";
 import { useToast } from "../../context/ToastContext";
 import { useCurrency } from "../../context/CurrencyContext";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
-import { Truck, MapPin, Phone, Clock, ClipboardList, CheckCircle } from "lucide-react";
+import { Modal } from "../../components/ui/Modal";
+import { Truck, MapPin, Phone, Clock, ClipboardList, CheckCircle, Navigation, Eye } from "lucide-react";
+
+import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
+import markerIcon from "leaflet/dist/images/marker-icon.png";
+import markerShadow from "leaflet/dist/images/marker-shadow.png";
+
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconUrl: markerIcon,
+  iconRetinaUrl: markerIcon2x,
+  shadowUrl: markerShadow,
+});
+
+const TowingDashboardRouteMap = ({ pickupGps, dropoffGps, pickupLabel, dropoffLabel }) => {
+  const mapRef = useRef(null);
+  const leafletMap = useRef(null);
+
+  useEffect(() => {
+    if (!mapRef.current) return;
+
+    const pGps = pickupGps || { lat: 37.7749, lng: -122.4194 };
+    const dGps = dropoffGps || { lat: 37.7845, lng: -122.4012 };
+
+    const map = L.map(mapRef.current, { zoomControl: true }).setView([pGps.lat, pGps.lng], 13);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "&copy; OpenStreetMap"
+    }).addTo(map);
+
+    const markerA = L.marker([pGps.lat, pGps.lng]).addTo(map);
+    markerA.bindPopup(`<b>Pickup Location (A)</b><br/>${pickupLabel || ""}`).openPopup();
+
+    const markerB = L.marker([dGps.lat, dGps.lng]).addTo(map);
+    markerB.bindPopup(`<b>Dropoff Destination (B)</b><br/>${dropoffLabel || ""}`);
+
+    try {
+      const bounds = L.latLngBounds([pGps.lat, pGps.lng], [dGps.lat, dGps.lng]);
+      map.fitBounds(bounds, { padding: [40, 40] });
+    } catch (e) {
+      // ignore
+    }
+
+    const timer = setTimeout(() => {
+      if (map) map.invalidateSize();
+    }, 250);
+
+    leafletMap.current = map;
+
+    return () => {
+      clearTimeout(timer);
+      if (leafletMap.current) {
+        leafletMap.current.remove();
+        leafletMap.current = null;
+      }
+    };
+  }, [pickupGps, dropoffGps, pickupLabel, dropoffLabel]);
+
+  return <div ref={mapRef} className="w-full h-64 rounded-xl border border-border overflow-hidden z-0 relative" />;
+};
 
 export const TowingDashboard = () => {
   const { currentUser } = useAuth();
@@ -15,10 +75,14 @@ export const TowingDashboard = () => {
   const { formatAmount } = useCurrency();
   const navigate = useNavigate();
 
+<<<<<<< HEAD
   const parseFee = (feeStr) => {
     if (!feeStr) return 0;
     return parseFloat(feeStr.replace(/[^0-9.]/g, "")) || 0;
   };
+=======
+  const [mapModalRequest, setMapModalRequest] = useState(null);
+>>>>>>> 50bb981a01cbeb021f801ec1b45f60fe3d27db30
 
   // Filter towing specific requests (category 'Accident' or explicitly assigned)
   const towingJobs = requests.filter((r) => r.towingId === currentUser.id);
@@ -39,9 +103,10 @@ export const TowingDashboard = () => {
     updateRequestStatus(reqId, "accepted", {
       towingId: currentUser.id,
       towingName: currentUser.name,
-      eta: "18 mins" // default driver ETA
+      eta: "18 mins"
     });
-    showToast("Towing job accepted. Dispatched to coordinates.", "success");
+    showToast("Towing job accepted! Navigating to live route map...", "success");
+    navigate("/towing/jobs");
   };
 
   return (
@@ -122,7 +187,10 @@ export const TowingDashboard = () => {
                 </div>
                 <h4 className="text-base font-bold text-foreground">{activeJob.category} — {activeJob.vehicle.make} {activeJob.vehicle.model}</h4>
                 <p className="text-xs text-foreground font-semibold flex items-center gap-1">
-                  <MapPin size={13} className="text-muted-foreground" /> Pickup: {activeJob.location}
+                  <MapPin size={13} className="text-rose-500" /> Pickup: {activeJob.location}
+                </p>
+                <p className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
+                  <Navigation size={13} className="text-emerald-500" /> Destination: {activeJob.destination || "Apex Auto Care"}
                 </p>
                 <p className="text-xs text-muted-foreground max-w-xl truncate">Note: {activeJob.description}</p>
               </div>
@@ -156,11 +224,17 @@ export const TowingDashboard = () => {
                       <span className="text-[10px] text-muted-foreground">ID: {req.id}</span>
                     </div>
                     <h4 className="font-extrabold text-sm text-foreground">{req.vehicle.make} {req.vehicle.model}</h4>
-                    <p className="text-xs text-foreground font-semibold">📍 {req.location}</p>
+                    <p className="text-xs text-foreground font-semibold">📍 Pickup: {req.location}</p>
+                    <p className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold">🎯 Dropoff: {req.destination || "Nearest Repair Shop"}</p>
                   </div>
-                  <Button onClick={() => handleAcceptJob(req.id)} size="sm" className="shrink-0 h-9 text-xs px-3">
-                    Accept Tow
-                  </Button>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Button onClick={() => setMapModalRequest(req)} size="sm" variant="outline" className="h-9 text-xs px-2.5">
+                      <Eye size={12} className="mr-1" /> View Route Map
+                    </Button>
+                    <Button onClick={() => handleAcceptJob(req.id)} size="sm" className="h-9 text-xs px-3">
+                      Accept Tow
+                    </Button>
+                  </div>
                 </div>
               ))
             ) : (
@@ -200,6 +274,43 @@ export const TowingDashboard = () => {
         </Card>
 
       </div>
+
+      {/* TOWING ROUTE MAP PREVIEW MODAL */}
+      <Modal
+        isOpen={!!mapModalRequest}
+        onClose={() => setMapModalRequest(null)}
+        title="Towing Recovery Route Preview"
+        size="lg"
+      >
+        {mapModalRequest && (
+          <div className="space-y-4 text-left">
+            <div className="p-3 bg-muted/40 rounded-xl border border-border/60 text-xs space-y-1">
+              <p className="font-bold text-foreground">Client: {mapModalRequest.userName} ({mapModalRequest.userPhone})</p>
+              <p className="text-muted-foreground">Vehicle: {mapModalRequest.vehicle.make} {mapModalRequest.vehicle.model} ({mapModalRequest.vehicle.plate})</p>
+              <p className="text-rose-500 font-semibold">📍 Pickup (A): {mapModalRequest.location}</p>
+              <p className="text-emerald-600 dark:text-emerald-400 font-semibold">🎯 Dropoff (B): {mapModalRequest.destination || "Nearest Repair Shop"}</p>
+            </div>
+
+            <TowingDashboardRouteMap
+              pickupGps={mapModalRequest.gps}
+              dropoffGps={mapModalRequest.destinationGps}
+              pickupLabel={mapModalRequest.location}
+              dropoffLabel={mapModalRequest.destination || "Destination"}
+            />
+
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="ghost" onClick={() => setMapModalRequest(null)}>Close</Button>
+              <Button onClick={() => {
+                const reqId = mapModalRequest.id;
+                setMapModalRequest(null);
+                handleAcceptJob(reqId);
+              }}>
+                Accept Tow Contract
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
 
     </div>
   );

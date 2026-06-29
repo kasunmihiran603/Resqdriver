@@ -1,10 +1,50 @@
-import React from "react";
+import React, { useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 import { useAuth } from "../../context/AuthContext";
 import { Card, CardHeader, CardTitle, CardContent } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import { Wrench, Phone, MapPin, Clock, Award, Edit3, Shield } from "lucide-react";
+
+import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
+import markerIcon from "leaflet/dist/images/marker-icon.png";
+import markerShadow from "leaflet/dist/images/marker-shadow.png";
+
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconUrl: markerIcon,
+  iconRetinaUrl: markerIcon2x,
+  shadowUrl: markerShadow,
+});
+
+const GarageProfileMap = ({ gps, label }) => {
+  const mapRef = useRef(null);
+  const leafletMap = useRef(null);
+
+  useEffect(() => {
+    if (!mapRef.current) return;
+    const targetGps = gps || { lat: 37.7749, lng: -122.4194 };
+    const map = L.map(mapRef.current, { zoomControl: true }).setView([targetGps.lat, targetGps.lng], 14);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "&copy; OpenStreetMap"
+    }).addTo(map);
+
+    const marker = L.marker([targetGps.lat, targetGps.lng]).addTo(map);
+    marker.bindPopup(`<b>${label || "Garage Workshop"}</b>`).openPopup();
+    leafletMap.current = map;
+
+    return () => {
+      if (leafletMap.current) {
+        leafletMap.current.remove();
+        leafletMap.current = null;
+      }
+    };
+  }, [gps, label]);
+
+  return <div ref={mapRef} className="w-full h-52 rounded-xl border border-border overflow-hidden z-0 relative" />;
+};
 
 export const GarageProfile = () => {
   const { currentUser } = useAuth();
@@ -70,6 +110,18 @@ export const GarageProfile = () => {
           <InfoRow icon={<Wrench size={16} />} label="Owner / Representative" value={currentUser?.ownerName || "Not provided"} />
           <InfoRow icon={<Phone size={16} />} label="Business Phone" value={currentUser?.phone || "Not provided"} />
           <InfoRow icon={<MapPin size={16} />} label="Workshop Address" value={currentUser?.address || "Not provided"} />
+
+          {/* Workshop Location Map Preview */}
+          <div className="pt-2 space-y-1.5">
+            <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider flex items-center gap-1">
+              <MapPin size={12} className="text-primary" /> Pinpoint Workshop Location (GPS)
+            </p>
+            <GarageProfileMap gps={currentUser?.gps} label={currentUser?.name} />
+            <p className="text-[10px] text-muted-foreground font-mono">
+              GPS Coordinates: LAT {currentUser?.gps?.lat?.toFixed(4) || "37.7749"}, LNG {currentUser?.gps?.lng?.toFixed(4) || "-122.4194"}
+            </p>
+          </div>
+
           <InfoRow icon={<Clock size={16} />} label="Business Hours" value={currentUser?.hours || "Not provided"} />
           <InfoRow icon={<Award size={16} />} label="Coverage Radius" value={currentUser?.coverageRadius || "Not provided"} />
           <InfoRow icon={<Award size={16} />} label="Rate Per KM" value={currentUser?.ratePerKM ? `LKR ${currentUser.ratePerKM}/km` : "Not provided"} />

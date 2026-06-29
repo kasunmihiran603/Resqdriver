@@ -6,6 +6,7 @@ import { useToast } from "../../context/ToastContext";
 import { Button } from "../../components/ui/Button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../../components/ui/Card";
 import { Input } from "../../components/ui/Input";
+import { Modal } from "../../components/ui/Modal";
 import { Truck, Car, Wrench, ArrowLeft, ArrowRight, ShieldCheck } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -17,6 +18,8 @@ export const Register = () => {
   const [step, setStep] = useState(1);
   const [selectedRole, setSelectedRole] = useState("user");
   const [loading, setLoading] = useState(false);
+  const [isAgreed, setIsAgreed] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
 
   const {
     register,
@@ -58,6 +61,10 @@ export const Register = () => {
   };
 
   const onSubmit = (data) => {
+    if (!isAgreed) {
+      showToast("Please agree to the Terms and Conditions to proceed.", "error");
+      return;
+    }
     setLoading(true);
     
     // Assemble final user object depending on role
@@ -66,7 +73,8 @@ export const Register = () => {
       email: data.email,
       password: data.password,
       phone: data.phone || "+1 (555) 000-0000",
-      role: selectedRole
+      role: selectedRole,
+      isAgreed: isAgreed
     };
 
     if (selectedRole === "user") {
@@ -287,11 +295,32 @@ export const Register = () => {
                       </div>
                     )}
 
+                    {/* Terms and Conditions Checkbox */}
+                    <div className="flex items-center gap-2 pt-2">
+                      <input
+                        type="checkbox"
+                        id="terms"
+                        checked={isAgreed}
+                        onChange={(e) => setIsAgreed(e.target.checked)}
+                        className="h-4 w-4 rounded border-border text-primary focus:ring-primary cursor-pointer"
+                      />
+                      <label htmlFor="terms" className="text-xs text-muted-foreground select-none cursor-pointer">
+                        I agree to the{" "}
+                        <button
+                          type="button"
+                          onClick={() => setShowTermsModal(true)}
+                          className="text-primary font-semibold hover:underline cursor-pointer inline-flex items-center"
+                        >
+                          Terms and Conditions
+                        </button>
+                      </label>
+                    </div>
+
                     <div className="pt-4 flex gap-3">
                       <Button type="button" variant="outline" className="flex-1" onClick={() => setStep(1)}>
                         Back
                       </Button>
-                      <Button type="submit" className="flex-1" loading={loading}>
+                      <Button type="submit" className="flex-1" loading={loading} disabled={!isAgreed}>
                         Register
                       </Button>
                     </div>
@@ -310,6 +339,101 @@ export const Register = () => {
           </CardContent>
         </Card>
       </motion.div>
+
+      {/* Terms and Conditions Modal */}
+      <Modal
+        isOpen={showTermsModal}
+        onClose={() => setShowTermsModal(false)}
+        title={selectedRole === "user" ? "Terms and Conditions" : "Service Provider Terms and Conditions"}
+        size="lg"
+      >
+        <div className="space-y-4 text-sm leading-relaxed text-muted-foreground">
+          {selectedRole === "user" ? (
+            <>
+              <section>
+                <h4 className="font-semibold text-foreground mb-1">1. Service Overview</h4>
+                <p>
+                  ResQdrive is a coordination platform that connects vehicle owners (Users) with automotive repair service providers (Garages) and Towing Service providers. Our platform facilitates the management of travel costs from the garage to the user's location and organizes necessary towing services.
+                </p>
+              </section>
+
+              <section>
+                <h4 className="font-semibold text-foreground mb-1">2. Pricing and Charges</h4>
+                <div className="space-y-2 pl-2 border-l-2 border-primary/20">
+                  <p><strong className="text-foreground">Service Rates:</strong> Service fees and per-kilometer rates charged by garages and towing providers are determined based on prevailing market conditions and the specific policies of the service providers.</p>
+                  <p><strong className="text-foreground">ResQdrive Commission:</strong> For every transaction facilitated through our platform (whether for repair or towing services), ResQdrive charges a fixed percentage (%) of the total service fee as a platform commission.</p>
+                  <p><strong className="text-foreground">Travelling/Towing Cost:</strong> The travel cost for a garage representative to reach the user, or the fee for towing services, is based on the pricing structure defined by the respective service provider.</p>
+                </div>
+              </section>
+
+              <section>
+                <h4 className="font-semibold text-foreground mb-1">3. Limitation of Liability</h4>
+                <p>
+                  ResQdrive acts solely as a coordination platform. We do not assume responsibility for the quality of repair work, technical services, or any damages that may occur during vehicle transportation performed by garages or towing service providers. All responsibility for technical faults and services lies with the respective service provider.
+                </p>
+              </section>
+
+              <section>
+                <h4 className="font-semibold text-foreground mb-1">4. User Obligations</h4>
+                <p>
+                  Users are responsible for the accuracy of the information provided (e.g., vehicle type, location). ResQdrive is not liable for any delays or additional costs incurred due to inaccurate information provided by the user.
+                </p>
+              </section>
+
+              <section>
+                <h4 className="font-semibold text-foreground mb-1">5. Modification of Terms</h4>
+                <p>
+                  We reserve the right to modify these terms and conditions at any time based on market changes or company policies. Such changes will be published on this page.
+                </p>
+              </section>
+            </>
+          ) : (
+            <>
+              <section>
+                <h4 className="font-semibold text-foreground mb-1">1. Platform Role</h4>
+                <p>
+                  ResQdrive acts solely as a technological coordination platform connecting Service Providers (Garages/Towing) with vehicle owners. ResQdrive is not a party to the actual service contract between the Provider and the User.
+                </p>
+              </section>
+
+              <section>
+                <h4 className="font-semibold text-foreground mb-1">2. Service Provider Obligations</h4>
+                <div className="space-y-2 pl-2 border-l-2 border-primary/20">
+                  <p><strong className="text-foreground">Professionalism:</strong> Service Providers must ensure that all services (repairs/towing) are performed by qualified professionals using standard safety practices.</p>
+                  <p><strong className="text-foreground">Accuracy:</strong> Providers must maintain accurate profile information, including service rates, per-kilometer charges, and availability.</p>
+                  <p><strong className="text-foreground">Response Time:</strong> Providers are expected to respond to service requests via the platform in a timely manner.</p>
+                </div>
+              </section>
+
+              <section>
+                <h4 className="font-semibold text-foreground mb-1">3. Commission and Payments</h4>
+                <div className="space-y-2 pl-2 border-l-2 border-primary/20">
+                  <p><strong className="text-foreground">Platform Commission:</strong> By registering on ResQdrive, the Service Provider agrees to pay a predefined percentage (%) commission on every successful service transaction facilitated through the platform.</p>
+                  <p><strong className="text-foreground">Payment Settlement:</strong> The Service Provider acknowledges that ResQdrive reserves the right to deduct the commission fee directly from the platform-processed service payments, as per the agreed-upon terms.</p>
+                </div>
+              </section>
+
+              <section>
+                <h4 className="font-semibold text-foreground mb-1">4. Liability and Indemnity</h4>
+                <div className="space-y-2 pl-2 border-l-2 border-primary/20">
+                  <p><strong className="text-foreground">Quality of Work:</strong> The Service Provider takes full legal and technical responsibility for the quality of repairs, parts replaced, and the safety of the vehicle during the towing process.</p>
+                  <p><strong className="text-foreground">Indemnification:</strong> The Service Provider agrees to indemnify and hold ResQdrive harmless from any claims, damages, or legal actions arising from the services rendered by the Provider.</p>
+                </div>
+              </section>
+
+              <section>
+                <h4 className="font-semibold text-foreground mb-1">5. Compliance with Platform Standards</h4>
+                <p>
+                  ResQdrive reserves the right to suspend or terminate the registration of any Service Provider who consistently fails to meet service quality standards, violates safety protocols, or attempts to bypass the platform's commission structure.
+                </p>
+              </section>
+            </>
+          )}
+        </div>
+        <div className="mt-6 flex justify-end">
+          <Button onClick={() => setShowTermsModal(false)}>Close</Button>
+        </div>
+      </Modal>
     </div>
   );
 };

@@ -35,7 +35,7 @@ import { useNavigate } from "react-router-dom";
 
 export const GarageDashboard = () => {
   const { currentUser } = useAuth();
-  const { requests, transactions, withdrawGarageBalance } = useRequests();
+  const { requests, transactions, withdrawGarageBalance, updateRequestStatus } = useRequests();
   const { showToast } = useToast();
   const { formatAmount } = useCurrency();
   const navigate = useNavigate();
@@ -47,7 +47,7 @@ export const GarageDashboard = () => {
 
   // Filter requests that belong to this garage, or are pending in general (available to accept)
   const garageRequests = requests.filter((r) => r.garageId === currentUser.id);
-  const pendingQueue = requests.filter((r) => r.status === "pending" && !r.garageId && !r.towingId);
+  const pendingQueue = requests.filter((r) => r.status === "pending" && !r.garageId && !r.isTowingRequest);
   const activeJobs = garageRequests.filter((r) => r.status !== "completed" && r.status !== "pending");
   const completedJobs = garageRequests.filter((r) => r.status === "completed");
 
@@ -77,6 +77,14 @@ export const GarageDashboard = () => {
   });
 
   const availableBalance = Math.max(0, garageEarnings - withdrawnTotal);
+
+  const handleClaimFromDashboard = (reqId) => {
+    updateRequestStatus(reqId, "accepted", {
+      garageId: currentUser.id,
+      garageName: currentUser.name
+    });
+    showToast("Request claimed! Head to Request Queue to assign a technician.", "success");
+  };
 
   const handleWithdraw = () => {
     if (availableBalance <= 0) {
@@ -309,9 +317,14 @@ export const GarageDashboard = () => {
                       📍 {req.location} • Vehicle: {req.vehicle.make} {req.vehicle.model}
                     </p>
                   </div>
-                  <Button size="sm" onClick={() => navigate("/garage/requests")} className="h-8 text-xs px-3">
-                    Claim Job
-                  </Button>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Button size="sm" variant="outline" onClick={() => navigate("/garage/requests")} className="h-8 text-xs px-3">
+                      View
+                    </Button>
+                    <Button size="sm" onClick={() => handleClaimFromDashboard(req.id)} className="h-8 text-xs px-3">
+                      Accept
+                    </Button>
+                  </div>
                 </div>
               ))
             ) : (
