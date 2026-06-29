@@ -316,10 +316,17 @@ const GarageTrackCard = ({ req, onCancel, onApproveCost, focused }) => {
     }
   }, [focused]);
 
-  // Mock garage location fallback if exact garage GPS is omitted
-  const garageLat = 37.7749;
-  const garageLng = -122.4194;
-  const distKm = req.gps ? calculateDistanceKm(garageLat, garageLng, req.gps.lat, req.gps.lng) : null;
+  // Dynamic garage location lookup for exact accepted partner GPS
+  const targetGarageGps = (() => {
+    try {
+      const users = JSON.parse(localStorage.getItem("vamp-users") || "[]");
+      const found = users.find((u) => u.id === req.garageId || u.name === req.garageName);
+      if (found && found.gps) return found.gps;
+    } catch (e) {}
+    return { lat: 37.7749, lng: -122.4194 };
+  })();
+
+  const distKm = req.gps && targetGarageGps ? calculateDistanceKm(targetGarageGps.lat, targetGarageGps.lng, req.gps.lat, req.gps.lng) : null;
 
   return (
     <motion.div ref={cardRef} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
