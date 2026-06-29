@@ -1,13 +1,75 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../context/ToastContext";
 import { Card, CardHeader, CardTitle, CardContent } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
-import { ArrowLeft, Save, Camera } from "lucide-react";
+import { ArrowLeft, Save, Camera, MapPin, Compass } from "lucide-react";
 import { useForm } from "react-hook-form";
+
+import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
+import markerIcon from "leaflet/dist/images/marker-icon.png";
+import markerShadow from "leaflet/dist/images/marker-shadow.png";
+
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconUrl: markerIcon,
+  iconRetinaUrl: markerIcon2x,
+  shadowUrl: markerShadow,
+});
+
+const GarageLocationPickerMap = ({ gps, onGpsChange }) => {
+  const mapRef = useRef(null);
+  const leafletMap = useRef(null);
+  const markerRef = useRef(null);
+
+  useEffect(() => {
+    if (!mapRef.current) return;
+    const initialGps = gps || { lat: 37.7749, lng: -122.4194 };
+
+    const map = L.map(mapRef.current, { zoomControl: true }).setView([initialGps.lat, initialGps.lng], 14);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "&copy; OpenStreetMap"
+    }).addTo(map);
+
+    const marker = L.marker([initialGps.lat, initialGps.lng], { draggable: true }).addTo(map);
+    marker.bindPopup("<b>Garage Workshop Location</b><br/>Drag or click map to update").openPopup();
+    markerRef.current = marker;
+
+    map.on("click", (e) => {
+      const { lat, lng } = e.latlng;
+      marker.setLatLng([lat, lng]);
+      onGpsChange({ lat, lng });
+    });
+
+    marker.on("dragend", (e) => {
+      const { lat, lng } = e.target.getLatLng();
+      onGpsChange({ lat, lng });
+    });
+
+    leafletMap.current = map;
+
+    return () => {
+      if (leafletMap.current) {
+        leafletMap.current.remove();
+        leafletMap.current = null;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (leafletMap.current && gps) {
+      if (markerRef.current) markerRef.current.setLatLng([gps.lat, gps.lng]);
+      leafletMap.current.setView([gps.lat, gps.lng], 14, { animate: true });
+    }
+  }, [gps]);
+
+  return <div ref={mapRef} className="w-full h-64 rounded-xl border border-border overflow-hidden z-0 relative" />;
+};
 
 export const GarageEditProfile = () => {
   const { currentUser, updateUserProfile } = useAuth();
@@ -16,6 +78,7 @@ export const GarageEditProfile = () => {
   const fileInputRef = useRef(null);
   const [loading, setLoading] = useState(false);
   const [photo, setPhoto] = useState(currentUser?.photo || "");
+  const [gps, setGps] = useState(currentUser?.gps || { lat: 37.7749, lng: -122.4194 });
 
   const { register, handleSubmit, formState: { errors } } = useForm({
     defaultValues: {
@@ -24,9 +87,25 @@ export const GarageEditProfile = () => {
       phone: currentUser?.phone || "",
       address: currentUser?.address || "",
       hours: currentUser?.hours || "08:00 - 20:00",
-      coverageRadius: currentUser?.coverageRadius || "15 miles"
+      coverageRadius: currentUser?.coverageRadius || "15 miles",
+      ratePerKM: currentUser?.ratePerKM || 150
     }
   });
+
+  const handleDetectLiveLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const newGps = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+          setGps(newGps);
+          showToast("Detected live workshop coordinates!", "success");
+        },
+        () => {
+          showToast("Could not detect GPS location.", "error");
+        }
+      );
+    }
+  };
 
   const handlePhotoChange = (e) => {
     const file = e.target.files[0];
@@ -39,7 +118,7 @@ export const GarageEditProfile = () => {
   const onSubmit = (data) => {
     setLoading(true);
     setTimeout(() => {
-      updateUserProfile({ ...data, photo });
+      updateUserProfile({ ...data, photo, gps });
       setLoading(false);
       showToast("Garage profile updated successfully.", "success");
       navigate("/garage/profile");
@@ -140,7 +219,7 @@ export const GarageEditProfile = () => {
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <Input
                 label="Business Phone Number"
                 placeholder="e.g. +1 (555) 018-9900"
@@ -153,6 +232,13 @@ export const GarageEditProfile = () => {
                 error={!!errors.coverageRadius}
                 {...register("coverageRadius", { required: "Coverage radius is required" })}
               />
+              <Input
+                label="Rate Per KM (LKR)"
+                type="number"
+                placeholder="e.g. 150"
+                error={!!errors.ratePerKM}
+                {...register("ratePerKM", { required: "Rate per KM is required", valueAsNumber: true })}
+              />
             </div>
 
             <Input
@@ -161,6 +247,26 @@ export const GarageEditProfile = () => {
               error={!!errors.address}
               {...register("address", { required: "Workshop address is required" })}
             />
+
+            {/* Workshop Location Map Selector */}
+            <div className="space-y-2 pt-2">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-foreground uppercase tracking-wide flex items-center gap-1.5">
+                  <MapPin size={14} className="text-primary" /> Pin Workshop GPS Location on Map
+                </label>
+                <button
+                  type="button"
+                  onClick={handleDetectLiveLocation}
+                  className="text-xs text-primary font-bold hover:underline flex items-center gap-1 cursor-pointer"
+                >
+                  <Compass size={14} /> Detect Current Location
+                </button>
+              </div>
+              <GarageLocationPickerMap gps={gps} onGpsChange={setGps} />
+              <p className="text-[10px] text-muted-foreground font-mono">
+                Selected GPS: LAT {gps.lat.toFixed(4)}, LNG {gps.lng.toFixed(4)} (Used for accurate customer distance calculations)
+              </p>
+            </div>
 
             <Input
               label="Business Hours"

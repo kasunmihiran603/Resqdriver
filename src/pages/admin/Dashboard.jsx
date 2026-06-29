@@ -61,10 +61,10 @@ export const AdminDashboard = () => {
     return acc + numeric;
   }, 0);
 
-  // Platform Revenue
+  // Platform Revenue (10% Admin Commission)
   const totalRevenue = transactions.reduce((acc, curr) => {
     const numeric = parseFee(curr.amount);
-    return acc + numeric;
+    return acc + (numeric * 0.10);
   }, 0);
 
   // Pending Payments
@@ -82,7 +82,7 @@ export const AdminDashboard = () => {
     })
     .reduce((acc, curr) => {
       const numeric = parseFee(curr.amount);
-      return acc + numeric;
+      return acc + (numeric * 0.10);
     }, 0);
 
   const revenueTrends = [
@@ -181,7 +181,7 @@ export const AdminDashboard = () => {
             <div className="space-y-1">
               <span className="text-[10px] text-muted-foreground font-extrabold uppercase tracking-wider block">Gross System Fees</span>
               <p className="text-2xl font-black text-foreground">{formatAmount(systemFees)}</p>
-              <span className="text-[10px] text-rose-500 font-bold block">Cumulative network value</span>
+              <span className="text-[10px] text-rose-500 font-bold block">Total dispatch fees network-wide</span>
             </div>
             <div className="p-3 bg-rose-500/10 text-rose-500 rounded-xl">
               <Activity size={20} />
@@ -344,7 +344,7 @@ export const AdminDashboard = () => {
               <div className="space-y-1">
                 <span className="text-[10px] text-muted-foreground font-extrabold uppercase tracking-wider block">Revenue Summary</span>
                 <p className="text-2xl font-black text-foreground">{formatAmount(totalRevenue)}</p>
-                <span className="text-[10px] text-emerald-500 font-bold block">Gross platform clearings</span>
+                <span className="text-[10px] text-emerald-500 font-bold block">10% commission on dispatch fees</span>
               </div>
               <div className="p-3 bg-emerald-500/10 text-emerald-500 rounded-xl">
                 <Activity size={20} />

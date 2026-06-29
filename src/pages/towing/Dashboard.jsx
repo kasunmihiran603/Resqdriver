@@ -75,11 +75,19 @@ export const TowingDashboard = () => {
   const { formatAmount } = useCurrency();
   const navigate = useNavigate();
 
+<<<<<<< HEAD
   const [mapModalRequest, setMapModalRequest] = useState(null);
+=======
+>>>>>>> 456e389962abe7ecbab573c742dd0f5af155c4f9
   const parseFee = (feeStr) => {
     if (!feeStr) return 0;
     return parseFloat(feeStr.replace(/[^0-9.]/g, "")) || 0;
   };
+<<<<<<< HEAD
+=======
+
+  const [mapModalRequest, setMapModalRequest] = useState(null);
+>>>>>>> 456e389962abe7ecbab573c742dd0f5af155c4f9
 
   // Filter towing specific requests (category 'Accident' or explicitly assigned)
   const towingJobs = requests.filter((r) => r.towingId === currentUser.id);
@@ -89,7 +97,7 @@ export const TowingDashboard = () => {
 
   const totalEarnings = completedJobs.reduce((acc, curr) => {
     const numeric = parseFee(curr.fee);
-    return acc + numeric;
+    return acc + (numeric * 0.90);
   }, 0);
 
   const handleAcceptJob = (reqId) => {

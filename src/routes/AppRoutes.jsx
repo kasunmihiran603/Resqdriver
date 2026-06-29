@@ -41,8 +41,13 @@ import { TowingSettings } from "../pages/towing/Settings";
 import { AdminDashboard } from "../pages/admin/Dashboard";
 import { AdminUsers } from "../pages/admin/Users";
 import { AdminServices } from "../pages/admin/Services";
+<<<<<<< HEAD
 import { AdminSettings } from "../pages/admin/Settings";
 import { AuditDetails } from "../pages/admin/AuditDetails";
+=======
+import { AuditDetails } from "../pages/admin/AuditDetails";
+import { AdminSettings } from "../pages/admin/Settings";
+>>>>>>> 456e389962abe7ecbab573c742dd0f5af155c4f9
 
 // Root Redirect component
 const RootRedirect = () => {

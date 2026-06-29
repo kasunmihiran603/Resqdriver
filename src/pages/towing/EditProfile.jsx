@@ -25,7 +25,8 @@ export const TowingEditProfile = () => {
       phone: currentUser?.phone || "",
       address: currentUser?.address || "",
       hours: currentUser?.hours || "08:00 - 22:00",
-      coverageRadius: currentUser?.coverageRadius || "20 miles"
+      coverageRadius: currentUser?.coverageRadius || "20 miles",
+      ratePerKM: currentUser?.ratePerKM || 200
     }
   });
 
@@ -164,12 +165,20 @@ export const TowingEditProfile = () => {
                 {...register("coverageRadius", { required: "Coverage area is required" })}
               />
               <Input
-                label="Operating Hours"
-                placeholder="e.g. 08:00 - 22:00 (Mon-Sun)"
-                error={!!errors.hours}
-                {...register("hours", { required: "Operating hours is required" })}
+                label="Rate Per KM (LKR)"
+                type="number"
+                placeholder="e.g. 200"
+                error={!!errors.ratePerKM}
+                {...register("ratePerKM", { required: "Rate per KM is required", valueAsNumber: true })}
               />
             </div>
+            
+            <Input
+              label="Operating Hours"
+              placeholder="e.g. 08:00 - 22:00 (Mon-Sun)"
+              error={!!errors.hours}
+              {...register("hours", { required: "Operating hours is required" })}
+            />
 
             <Input
               label="Base / Depot Address"
