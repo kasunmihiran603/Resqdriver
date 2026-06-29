@@ -54,7 +54,7 @@ export const GarageDashboard = () => {
   const paidJobs = completedJobs.filter((r) => r.paymentStatus === "paid");
   const unpaidJobs = completedJobs.filter((r) => r.paymentStatus === "unpaid");
 
-  // Sum revenue (90% allocated to garage, 10% admin commission)
+  // Sum revenue (90% of dispatch fee allocated to garage after 10% platform commission)
   const totalRevenue = completedJobs.reduce((acc, curr) => {
     const numeric = parseFee(curr.fee);
     return acc + (numeric * 0.90);
@@ -191,7 +191,7 @@ export const GarageDashboard = () => {
             <div className="space-y-1">
               <span className="text-[10px] text-muted-foreground font-extrabold uppercase tracking-wider block">Estimated Earnings</span>
               <p className="text-2xl font-black text-foreground">{formatAmount(totalRevenue)}</p>
-              <span className="text-[10px] text-primary font-bold block">Based on base service fees</span>
+              <span className="text-[10px] text-primary font-bold block">90% of dispatch fees collected</span>
             </div>
             <div className="p-3 bg-primary/10 text-primary rounded-xl">
               <DollarSign size={22} />
