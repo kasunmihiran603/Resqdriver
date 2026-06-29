@@ -4,6 +4,7 @@ import "leaflet/dist/leaflet.css";
 import { useAuth } from "../../context/AuthContext";
 import { useRequests } from "../../context/RequestContext";
 import { useToast } from "../../context/ToastContext";
+import { useCurrency } from "../../context/CurrencyContext";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import { Modal } from "../../components/ui/Modal";
@@ -79,6 +80,13 @@ export const GarageRequests = () => {
   const { currentUser } = useAuth();
   const { requests, updateRequestStatus } = useRequests();
   const { showToast } = useToast();
+  const { formatAmount } = useCurrency();
+
+  // Strip any existing currency symbol and parse to raw USD float
+  const parseFee = (feeStr) => {
+    if (!feeStr) return 0;
+    return parseFloat(String(feeStr).replace(/[^0-9.]/g, "")) || 0;
+  };
 
   const [activeTab, setActiveTab] = useState("all"); // all, unclaimed, active, completed
   const [selectedRequest, setSelectedRequest] = useState(null);
@@ -414,7 +422,7 @@ export const GarageRequests = () => {
                             <p className="text-[10px] text-muted-foreground">{req.vehicle.make} {req.vehicle.model}</p>
                           </td>
                           <td className="p-4 font-semibold text-foreground">{req.technician?.name || "Self-Fix Guide"}</td>
-                          <td className="p-4 font-bold text-foreground">{req.fee}</td>
+                          <td className="p-4 font-bold text-foreground">{formatAmount(parseFee(req.fee))}</td>
                           <td className="p-4 text-muted-foreground">
                             {new Date(req.timestamp).toLocaleDateString()}
                           </td>

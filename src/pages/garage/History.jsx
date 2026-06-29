@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useRequests } from "../../context/RequestContext";
+import { useCurrency } from "../../context/CurrencyContext";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../../components/ui/Card";
 import { Input } from "../../components/ui/Input";
 import { Search, Clock, Calendar, Car, User, ClipboardCheck } from "lucide-react";
@@ -8,7 +9,14 @@ import { Search, Clock, Calendar, Car, User, ClipboardCheck } from "lucide-react
 export const GarageHistory = () => {
   const { currentUser } = useAuth();
   const { requests } = useRequests();
+  const { formatAmount } = useCurrency();
   const [searchTerm, setSearchTerm] = useState("");
+
+  // Strip currency symbol and parse to raw USD number
+  const parseFee = (feeStr) => {
+    if (!feeStr) return 0;
+    return parseFloat(String(feeStr).replace(/[^0-9.]/g, "")) || 0;
+  };
 
   const history = requests.filter(
     (r) => r.garageId === currentUser.id && r.status === "completed"
@@ -66,7 +74,7 @@ export const GarageHistory = () => {
                   </div>
                   
                   <div className="text-left sm:text-right shrink-0">
-                    <span className="text-base font-extrabold text-foreground block">{item.fee}</span>
+                    <span className="text-base font-extrabold text-foreground block">{formatAmount(parseFee(item.fee))}</span>
                     <span className="text-[10px] text-muted-foreground font-semibold flex items-center sm:justify-end gap-1 mt-0.5">
                       <Calendar size={11} /> {new Date(item.timestamp).toLocaleDateString()}
                     </span>

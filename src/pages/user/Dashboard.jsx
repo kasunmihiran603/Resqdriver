@@ -3,6 +3,7 @@ import jsPDF from "jspdf";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useRequests } from "../../context/RequestContext";
+import { useCurrency } from "../../context/CurrencyContext";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import {
@@ -24,7 +25,14 @@ import {
 export const UserDashboard = () => {
   const { currentUser } = useAuth();
   const { getRequestsByRole } = useRequests();
+  const { formatAmount } = useCurrency();
   const navigate = useNavigate();
+
+  // Strip any existing currency symbol and convert to a raw USD number
+  const parseFee = (feeStr) => {
+    if (!feeStr) return 0;
+    return parseFloat(String(feeStr).replace(/[^0-9.]/g, "")) || 0;
+  };
 
   const userRequests = getRequestsByRole("user", currentUser?.id);
   const activeRequests = userRequests.filter((r) => r.status !== "completed");
@@ -346,7 +354,7 @@ export const UserDashboard = () => {
                         size="sm"
                         className="flex items-center gap-1.5 text-xs bg-primary hover:bg-primary/95 text-primary-foreground font-bold shadow-md shadow-primary/10"
                       >
-                        <CreditCard size={14} /> Pay Now ({req.fee})
+                        <CreditCard size={14} /> Pay Now ({formatAmount(parseFee(req.fee))})
                       </Button>
                     </div>
                   </CardContent>
@@ -449,7 +457,7 @@ export const UserDashboard = () => {
                           <td className="p-4">
                             <p className="font-semibold text-foreground">{req.garageName || "Self-Fix Helper"}</p>
                           </td>
-                          <td className="p-4 font-bold text-foreground">{req.fee}</td>
+                          <td className="p-4 font-bold text-foreground">{formatAmount(parseFee(req.fee))}</td>
                           <td className="p-4">
                             <span className={`px-2 py-0.5 rounded text-[9px] font-bold border uppercase ${statusBadges[req.status]}`}>
                               {req.status}
@@ -484,7 +492,7 @@ export const UserDashboard = () => {
                         </div>
                         <div>
                           <span className="text-muted-foreground block text-[9px] font-bold uppercase">Fee</span>
-                          <span className="font-bold text-foreground">{req.fee}</span>
+                          <span className="font-bold text-foreground">{formatAmount(parseFee(req.fee))}</span>
                         </div>
                       </div>
                       <p className="text-[10px] text-muted-foreground/80 text-right">
