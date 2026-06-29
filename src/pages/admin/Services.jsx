@@ -1,15 +1,14 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useRequests } from "../../context/RequestContext";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../../components/ui/Card";
 import { Input } from "../../components/ui/Input";
 import { Activity, Search, MapPin, Eye, ShieldAlert, CheckCircle } from "lucide-react";
-import { Modal } from "../../components/ui/Modal";
 
 export const AdminServices = () => {
   const { requests } = useRequests();
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedReq, setSelectedReq] = useState(null);
-  const [isOpen, setIsOpen] = useState(false);
 
   const filteredRequests = requests.filter((r) => {
     const text = searchTerm.toLowerCase();
@@ -20,11 +19,6 @@ export const AdminServices = () => {
       (r.garageName && r.garageName.toLowerCase().includes(text))
     );
   });
-
-  const handleOpenDetails = (req) => {
-    setSelectedReq(req);
-    setIsOpen(true);
-  };
 
   const statusBadges = {
     pending: "bg-yellow-500/10 text-yellow-500 border-yellow-500/25",
@@ -92,7 +86,7 @@ export const AdminServices = () => {
                   {new Date(req.timestamp).toLocaleDateString()} {new Date(req.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </span>
                 <button
-                  onClick={() => handleOpenDetails(req)}
+                  onClick={() => navigate(`/admin/audit/${req.id}`)}
                   className="text-xs font-bold text-primary hover:underline flex items-center gap-1 cursor-pointer"
                 >
                   <Eye size={13} /> View Audit
@@ -108,56 +102,6 @@ export const AdminServices = () => {
           </div>
         )}
       </div>
-
-      {/* Audit Modal */}
-      <Modal isOpen={isOpen} onClose={() => setIsOpen(false)} title="Emergency Audit Details">
-        {selectedReq && (
-          <div className="space-y-4 text-xs text-left leading-relaxed">
-            <div className="grid grid-cols-2 gap-4 pb-3 border-b border-border/50">
-              <div>
-                <p className="text-[9px] text-muted-foreground uppercase font-bold tracking-wider">Incident ID</p>
-                <p className="text-sm font-extrabold text-foreground">{selectedReq.id}</p>
-              </div>
-              <div>
-                <p className="text-[9px] text-muted-foreground uppercase font-bold tracking-wider">Category</p>
-                <p className="text-sm font-extrabold text-foreground">{selectedReq.category}</p>
-              </div>
-            </div>
-
-            <div className="space-y-1">
-              <p className="text-[9px] text-muted-foreground uppercase font-bold tracking-wider">Symptom Checklist</p>
-              <p className="font-bold text-foreground">{selectedReq.symptoms || "None selected"}</p>
-            </div>
-
-            <div className="space-y-1">
-              <p className="text-[9px] text-muted-foreground uppercase font-bold tracking-wider">Location details</p>
-              <p className="font-bold text-foreground flex items-center gap-1">📍 {selectedReq.location}</p>
-            </div>
-
-            <div className="space-y-1 pt-1">
-              <p className="text-[9px] text-muted-foreground uppercase font-bold tracking-wider">Additional details</p>
-              <div className="p-3 bg-muted rounded-xl italic">"{selectedReq.description}"</div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4 pt-2">
-              <div>
-                <p className="text-[9px] text-muted-foreground uppercase font-bold tracking-wider">Photos Uploaded</p>
-                <p className="font-bold text-foreground">{selectedReq.imageSimulated ? "Yes (Damage Attached)" : "No attachments"}</p>
-              </div>
-              <div>
-                <p className="text-[9px] text-muted-foreground uppercase font-bold tracking-wider">Voice Diagnostics</p>
-                <p className="font-bold text-foreground">{selectedReq.audioSimulated ? "Yes (Voice Attached)" : "No attachments"}</p>
-              </div>
-            </div>
-
-            <div className="flex justify-end pt-4">
-              <Button variant="outline" onClick={() => setIsOpen(false)}>
-                Close Audit Log
-              </Button>
-            </div>
-          </div>
-        )}
-      </Modal>
     </div>
   );
 };

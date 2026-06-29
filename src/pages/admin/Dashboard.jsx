@@ -1,6 +1,7 @@
 import React from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useRequests } from "../../context/RequestContext";
+import { useCurrency } from "../../context/CurrencyContext";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import {
@@ -36,7 +37,13 @@ import { useNavigate } from "react-router-dom";
 export const AdminDashboard = () => {
   const { currentUser } = useAuth();
   const { requests, transactions } = useRequests();
+  const { formatAmount } = useCurrency();
   const navigate = useNavigate();
+
+  const parseFee = (feeStr) => {
+    if (!feeStr) return 0;
+    return parseFloat(feeStr.replace(/[^0-9.]/g, "")) || 0;
+  };
 
   // Load all registered users from localStorage to count
   const allUsers = JSON.parse(localStorage.getItem("vamp-users") || "[]");
@@ -50,14 +57,14 @@ export const AdminDashboard = () => {
 
   // Sum system-wide estimated fees
   const systemFees = requests.reduce((acc, curr) => {
-    const numeric = parseFloat(curr.fee.replace(/[$,]/g, "")) || 0;
+    const numeric = parseFee(curr.fee);
     return acc + numeric;
   }, 0);
 
-  // Platform Revenue
+  // Platform Revenue (10% Admin Commission)
   const totalRevenue = transactions.reduce((acc, curr) => {
-    const numeric = parseFloat(curr.amount.replace(/[$,]/g, "")) || 0;
-    return acc + numeric;
+    const numeric = parseFee(curr.amount);
+    return acc + (numeric * 0.10);
   }, 0);
 
   // Pending Payments
@@ -74,8 +81,8 @@ export const AdminDashboard = () => {
       return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
     })
     .reduce((acc, curr) => {
-      const numeric = parseFloat(curr.amount.replace(/[$,]/g, "")) || 0;
-      return acc + numeric;
+      const numeric = parseFee(curr.amount);
+      return acc + (numeric * 0.10);
     }, 0);
 
   const revenueTrends = [
@@ -173,7 +180,7 @@ export const AdminDashboard = () => {
           <CardContent className="p-5 flex items-center justify-between">
             <div className="space-y-1">
               <span className="text-[10px] text-muted-foreground font-extrabold uppercase tracking-wider block">Gross System Fees</span>
-              <p className="text-2xl font-black text-foreground">${systemFees.toFixed(2)}</p>
+              <p className="text-2xl font-black text-foreground">{formatAmount(systemFees)}</p>
               <span className="text-[10px] text-rose-500 font-bold block">Cumulative network value</span>
             </div>
             <div className="p-3 bg-rose-500/10 text-rose-500 rounded-xl">
@@ -336,7 +343,7 @@ export const AdminDashboard = () => {
             <CardContent className="p-5 flex items-center justify-between">
               <div className="space-y-1">
                 <span className="text-[10px] text-muted-foreground font-extrabold uppercase tracking-wider block">Revenue Summary</span>
-                <p className="text-2xl font-black text-foreground">${totalRevenue.toFixed(2)}</p>
+                <p className="text-2xl font-black text-foreground">{formatAmount(totalRevenue)}</p>
                 <span className="text-[10px] text-emerald-500 font-bold block">Gross platform clearings</span>
               </div>
               <div className="p-3 bg-emerald-500/10 text-emerald-500 rounded-xl">
@@ -362,7 +369,7 @@ export const AdminDashboard = () => {
             <CardContent className="p-5 flex items-center justify-between">
               <div className="space-y-1">
                 <span className="text-[10px] text-muted-foreground font-extrabold uppercase tracking-wider block">Monthly Income</span>
-                <p className="text-2xl font-black text-foreground">${monthlyIncome.toFixed(2)}</p>
+                <p className="text-2xl font-black text-foreground">{formatAmount(monthlyIncome)}</p>
                 <span className="text-[10px] text-primary font-bold block">Current month volume</span>
               </div>
               <div className="p-3 bg-primary/10 text-primary rounded-xl">
@@ -404,7 +411,7 @@ export const AdminDashboard = () => {
                             <td className="p-4 text-muted-foreground">{new Date(t.date).toLocaleDateString()}</td>
                             <td className="p-4 font-semibold text-foreground">{t.userName}</td>
                             <td className="p-4 font-semibold text-foreground">{t.garageName}</td>
-                            <td className="p-4 font-bold text-foreground">{t.amount}</td>
+                            <td className="p-4 font-bold text-foreground">{formatAmount(parseFee(t.amount))}</td>
                             <td className="p-4 text-muted-foreground">{t.paymentMethod}</td>
                             <td className="p-4">
                               <span className="px-2 py-0.5 rounded text-[8px] font-bold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 uppercase">
@@ -432,7 +439,7 @@ export const AdminDashboard = () => {
                         </div>
                         <div className="flex justify-between items-center text-[10px] text-muted-foreground/80 pt-1 border-t border-border/40">
                           <span>{new Date(t.date).toLocaleDateString()}</span>
-                          <span className="font-bold text-foreground text-xs">{t.amount}</span>
+                          <span className="font-bold text-foreground text-xs">{formatAmount(parseFee(t.amount))}</span>
                         </div>
                       </div>
                     ))}

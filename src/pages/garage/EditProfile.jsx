@@ -87,7 +87,8 @@ export const GarageEditProfile = () => {
       phone: currentUser?.phone || "",
       address: currentUser?.address || "",
       hours: currentUser?.hours || "08:00 - 20:00",
-      coverageRadius: currentUser?.coverageRadius || "15 miles"
+      coverageRadius: currentUser?.coverageRadius || "15 miles",
+      ratePerKM: currentUser?.ratePerKM || 150
     }
   });
 
@@ -218,7 +219,7 @@ export const GarageEditProfile = () => {
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <Input
                 label="Business Phone Number"
                 placeholder="e.g. +1 (555) 018-9900"
@@ -230,6 +231,13 @@ export const GarageEditProfile = () => {
                 placeholder="e.g. 15 miles, Sector 7"
                 error={!!errors.coverageRadius}
                 {...register("coverageRadius", { required: "Coverage radius is required" })}
+              />
+              <Input
+                label="Rate Per KM (LKR)"
+                type="number"
+                placeholder="e.g. 150"
+                error={!!errors.ratePerKM}
+                {...register("ratePerKM", { required: "Rate per KM is required", valueAsNumber: true })}
               />
             </div>
 

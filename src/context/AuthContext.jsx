@@ -38,7 +38,8 @@ const seedUsers = () => {
         address: "1028 Industrial Blvd, Sector 7",
         hours: "08:00 - 20:00",
         coverageRadius: "15 miles",
-        gps: { lat: 37.7749, lng: -122.4194 },
+        ratePerKM: 150,
+        gps: { lat: 37.7891, lng: -122.4014 },
         services: [
           { id: "srv-1", name: "Engine Issue", price: "$120 - $500", desc: "Diagnostic, overheating fix, minor electrical and mechanical repair." },
           { id: "srv-2", name: "Tire Replacement/Fix", price: "$50 - $150", desc: "Flat tire repairs, spares replacement, and pressure calibration." },
@@ -61,7 +62,9 @@ const seedUsers = () => {
         phone: "+1 (555) 017-4488",
         truckPlate: "TOW-FAST1",
         status: "available", // available, busy, offline
-        address: "500 Logistics Way, Dock 4"
+        address: "500 Logistics Way, Dock 4",
+        ratePerKM: 200,
+        gps: { lat: 37.7562, lng: -122.4498 }
       },
       {
         id: "adm-1",
@@ -113,7 +116,9 @@ export const AuthProvider = ({ children }) => {
       ...details,
       vehicles: details.vehicles || [],
       technicians: details.technicians || [],
-      services: details.services || []
+      services: details.services || [],
+      ratePerKM: details.ratePerKM || (details.role === "towing" ? 200 : 150),
+      gps: details.gps || (details.role === "towing" ? { lat: 37.7562, lng: -122.4498 } : { lat: 37.7891, lng: -122.4014 })
     };
 
     users.push(newUser);

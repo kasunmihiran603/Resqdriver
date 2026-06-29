@@ -6,6 +6,7 @@ import "leaflet/dist/leaflet.css";
 import { useAuth } from "../../context/AuthContext";
 import { useRequests } from "../../context/RequestContext";
 import { useToast } from "../../context/ToastContext";
+import { useCurrency } from "../../context/CurrencyContext";
 import { Card, CardHeader, CardTitle, CardContent } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import { Timeline } from "../../components/ui/Timeline";
@@ -106,12 +107,24 @@ const getGarageTimeline = (req) => {
   if (req.status === "pending") {
     timeline.push({ title: "Garage Matching", description: "Checking mechanic workloads", time: "In progress", status: "active" });
     timeline.push({ title: "Technician Dispatched", description: "GPS mapping lock", time: "--", status: "upcoming" });
-  } else if (req.status === "accepted" || req.status === "technician_assigned") {
+  } else if (req.status === "accepted") {
     timeline.push({ title: "Garage Accepted", description: `Accepted by ${req.garageName}`, time: "3m ago", status: "completed" });
-    timeline.push({ title: "Technician Dispatched", description: req.technician ? `Mechanic ${req.technician.name} preparing toolkit` : "Assigning mechanic", time: "Just now", status: "active" });
+    timeline.push({ title: "Cost Approval", description: "Awaiting your cost approval", time: "Just now", status: "active" });
+    timeline.push({ title: "Technician Dispatched", description: "Assigning mechanic", time: "--", status: "upcoming" });
+  } else if (req.status === "user_approved") {
+    timeline.push({ title: "Garage Accepted", description: `Accepted by ${req.garageName}`, time: "5m ago", status: "completed" });
+    timeline.push({ title: "Cost Approved", description: "You approved the estimated cost", time: "3m ago", status: "completed" });
+    timeline.push({ title: "Technician Dispatched", description: "Garage is assigning mechanic", time: "In progress", status: "active" });
+    timeline.push({ title: "Repair In Progress", description: "On-site diagnostic fix", time: "--", status: "upcoming" });
+  } else if (req.status === "technician_assigned") {
+    timeline.push({ title: "Garage Accepted", description: `Accepted by ${req.garageName}`, time: "10m ago", status: "completed" });
+    timeline.push({ title: "Cost Approved", description: "You approved the estimated cost", time: "8m ago", status: "completed" });
+    timeline.push({ title: "Technician Dispatched", description: `Mechanic ${req.technician.name} preparing toolkit`, time: "Just now", status: "completed" });
+    timeline.push({ title: "On the Way", description: "Mechanic driving to you", time: "In progress", status: "active" });
     timeline.push({ title: "Repair In Progress", description: "On-site diagnostic fix", time: "--", status: "upcoming" });
   } else if (req.status === "on_the_way") {
-    timeline.push({ title: "Garage Accepted", description: `Accepted by ${req.garageName}`, time: "5m ago", status: "completed" });
+    timeline.push({ title: "Cost Approved", description: "You approved the estimated cost", time: "10m ago", status: "completed" });
+    timeline.push({ title: "Technician Dispatched", description: `Mechanic ${req.technician.name} dispatched`, time: "8m ago", status: "completed" });
     timeline.push({ title: "On the Way", description: `${req.technician?.name || "Mechanic"} driving to you. ETA: ${req.eta}`, time: "Just now", status: "active" });
     timeline.push({ title: "Repair Completed", description: "Incident resolved", time: "--", status: "upcoming" });
   } else if (req.status === "repair_in_progress") {
@@ -280,16 +293,22 @@ const calculateDistanceKm = (lat1, lon1, lat2, lon2) => {
   const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
     Math.cos(lat1 * (Math.PI / 180)) *
-      Math.cos(lat2 * (Math.PI / 180)) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
+    Math.cos(lat2 * (Math.PI / 180)) *
+    Math.sin(dLon / 2) *
+    Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return (R * c).toFixed(1);
 };
 
-const GarageTrackCard = ({ req, onCancel, focused }) => {
+const GarageTrackCard = ({ req, onCancel, onApproveCost, focused }) => {
   const [open, setOpen] = useState(true);
   const cardRef = useRef(null);
+  const { formatAmount } = useCurrency();
+
+  const parseFee = (feeStr) => {
+    if (!feeStr) return 0;
+    return parseFloat(feeStr.replace(/[^0-9.]/g, "")) || 0;
+  };
 
   useEffect(() => {
     if (focused && cardRef.current) {
@@ -386,25 +405,55 @@ const GarageTrackCard = ({ req, onCancel, focused }) => {
                       </div>
                     </CardHeader>
                     <CardContent className="space-y-3">
-                      {req.technician ? (
-                        <div className="p-3 bg-muted/50 rounded-xl border flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary shrink-0 text-xs">
-                            {req.technician.name.substring(0, 2).toUpperCase()}
+                      {req.status === "accepted" && (
+                        <div className="p-3.5 bg-primary/10 border border-primary/20 rounded-xl space-y-2 text-xs">
+                          <div className="flex justify-between items-center">
+                            <span className="font-bold text-muted-foreground">Estimated Cost:</span>
+                            <span className="font-black text-primary text-sm">{formatAmount(parseFee(req.fee))}</span>
                           </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="text-xs font-bold text-foreground truncate">{req.technician.name}</p>
-                            <p className="text-[10px] text-muted-foreground uppercase font-bold">Technician</p>
-                          </div>
-                          <a
-                            href={`tel:${req.technician.phone}`}
-                            className="w-8 h-8 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground flex items-center justify-center shrink-0"
+                          <Button
+                            onClick={() => onApproveCost(req.id)}
+                            className="w-full h-8 text-[11px] font-bold flex items-center justify-center gap-1.5"
                           >
-                            <Phone size={14} />
-                          </a>
+                            <CheckCircle2 size={13} /> Approve Cost & Dispatch
+                          </Button>
                         </div>
-                      ) : (
-                        <p className="text-xs text-muted-foreground italic">Garage is selecting best technician.</p>
                       )}
+
+                      {req.status === "user_approved" && (
+                        <div className="p-3.5 bg-emerald-500/10 border border-emerald-500/20 rounded-xl space-y-1 text-xs">
+                          <div className="flex justify-between items-center">
+                            <span className="font-bold text-emerald-600">Cost Approved:</span>
+                            <span className="font-black text-emerald-700 text-sm">{formatAmount(parseFee(req.fee))}</span>
+                          </div>
+                          <p className="text-[10px] text-muted-foreground italic mt-0.5">Awaiting partner to dispatch technician.</p>
+                        </div>
+                      )}
+
+                      {!["accepted", "user_approved"].includes(req.status) && (
+                        <>
+                          {req.technician ? (
+                            <div className="p-3 bg-muted/50 rounded-xl border flex items-center gap-3">
+                              <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary shrink-0 text-xs">
+                                {req.technician.name.substring(0, 2).toUpperCase()}
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-xs font-bold text-foreground truncate">{req.technician.name}</p>
+                                <p className="text-[10px] text-muted-foreground uppercase font-bold">Technician</p>
+                              </div>
+                              <a
+                                href={`tel:${req.technician.phone}`}
+                                className="w-8 h-8 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground flex items-center justify-center shrink-0"
+                              >
+                                <Phone size={14} />
+                              </a>
+                            </div>
+                          ) : (
+                            <p className="text-xs text-muted-foreground italic">Garage is selecting best technician.</p>
+                          )}
+                        </>
+                      )}
+
                       <div className="text-xs border-t border-border/50 pt-3">
                         <p className="font-bold text-foreground text-[10px] uppercase tracking-wide">Location</p>
                         <p className="text-muted-foreground mt-0.5">{req.location}</p>
@@ -467,6 +516,13 @@ export const TrackAssistance = () => {
       updateRequestStatus(id, "completed", { eta: "Cancelled", fee: "$0.00" });
       showToast(isTow ? "Tow request cancelled." : "Emergency signal cancelled.", "info");
     }
+  };
+
+  const handleApproveCost = (id) => {
+    updateRequestStatus(id, "user_approved", {
+      eta: "Awaiting technician assignment..."
+    });
+    showToast("Estimated cost approved. The partner garage has been notified to assign a mechanic.", "success");
   };
 
   if (displayRequests.length === 0) {
@@ -576,6 +632,7 @@ export const TrackAssistance = () => {
               key={req.id}
               req={req}
               onCancel={(id) => handleCancel(id, false)}
+              onApproveCost={handleApproveCost}
               focused={focusRequestId === req.id}
             />
           ))}

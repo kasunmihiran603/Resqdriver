@@ -11,8 +11,8 @@ export const useRequests = () => {
 };
 
 const seedRequests = () => {
-  const requests = localStorage.getItem("vamp-requests");
-  if (!requests) {
+  const cached = localStorage.getItem("vamp-requests");
+  if (!cached) {
     const defaultRequests = [
       {
         id: "req-1",
@@ -20,12 +20,12 @@ const seedRequests = () => {
         userName: "Alex Mercer",
         userPhone: "+1 (555) 019-2834",
         vehicle: { make: "Tesla", model: "Model S", year: "2022", plate: "E-DRIVE1" },
-        category: "Engine Issue",
-        symptoms: "Loud rattling from motor, speed capped at 30mph.",
-        description: "Rattling noise started on the highway and car went into limp mode. Battery levels seem stable but power draw is high.",
-        location: "Highway 101 South, Near Mile Marker 45",
-        gps: { lat: 37.7845, lng: -122.4012 },
-        imageSimulated: true,
+        category: "Battery Issue",
+        symptoms: "Dead battery, dashboard lights flickered.",
+        description: "Stuck in downtown parking garage. Need a jumpstart.",
+        location: "284 Market Street, Downtown",
+        gps: { lat: 37.7749, lng: -122.4194 },
+        imageSimulated: false,
         audioSimulated: false,
         status: "on_the_way",
         paymentStatus: "unpaid",
@@ -34,8 +34,9 @@ const seedRequests = () => {
         technician: { id: "tech-1", name: "James R.", phone: "+1 (555) 018-9901" },
         towingId: null,
         eta: "14 mins",
-        timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
-        fee: "$240.00"
+        timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString(), // 30 mins ago
+        fee: "$240.00",
+        distance: 8.5
       },
       {
         id: "req-2",
@@ -57,8 +58,9 @@ const seedRequests = () => {
         technician: { id: "tech-3", name: "David K.", phone: "+1 (555) 018-9903" },
         towingId: null,
         eta: "Completed",
-        timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-        fee: "$85.00"
+        timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
+        fee: "$85.00",
+        distance: 5.0
       },
       {
         id: "req-3",
@@ -80,8 +82,9 @@ const seedRequests = () => {
         towingName: "Rapid Towing & Recovery",
         technician: null,
         eta: "Pending Driver Assignment",
-        timestamp: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
-        fee: "$180.00"
+        timestamp: new Date(Date.now() - 5 * 60 * 1000).toISOString(), // 5 mins ago
+        fee: "$180.00",
+        distance: 9.0
       },
       {
         id: "req-4",
@@ -103,8 +106,9 @@ const seedRequests = () => {
         technician: { id: "tech-1", name: "James R.", phone: "+1 (555) 018-9901" },
         towingId: null,
         eta: "Completed",
-        timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-        fee: "$150.00"
+        timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
+        fee: "$150.00",
+        distance: 10.0
       }
     ];
     localStorage.setItem("vamp-requests", JSON.stringify(defaultRequests));
@@ -194,6 +198,22 @@ export const RequestProvider = ({ children }) => {
     return newRequest;
   };
 
+  const calculateHaversineDistance = (coords1, coords2) => {
+    if (!coords1 || !coords2) return 8.5; // default fallback distance in km
+    const R = 6371; // radius of Earth in km
+    const dLat = ((coords2.lat - coords1.lat) * Math.PI) / 180;
+    const dLon = ((coords2.lng - coords1.lng) * Math.PI) / 180;
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos((coords1.lat * Math.PI) / 180) *
+      Math.cos((coords2.lat * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const distance = R * c; // in km
+    return Math.round(distance * 10) / 10; // round to 1 decimal place
+  };
+
   const updateRequestStatus = (requestId, status, additionalFields = {}) => {
     const updated = requests.map((req) => {
       if (req.id === requestId) {
@@ -204,11 +224,30 @@ export const RequestProvider = ({ children }) => {
         else if (status === "repair_in_progress") defaultEta = "Under repair";
         else if (status === "completed") defaultEta = "Completed";
 
+        // Calculate dynamic travel/dispatch fee if transitioning to accepted
+        let updatedFeeFields = {};
+        if (status === "accepted") {
+          const providerId = additionalFields.garageId || additionalFields.towingId;
+          const users = JSON.parse(localStorage.getItem("vamp-users") || "[]");
+          const provider = users.find((u) => u.id === providerId);
+          const rate = provider?.ratePerKM || (provider?.role === "towing" ? 200 : 150);
+
+          // Calculate Haversine distance
+          const distance = calculateHaversineDistance(req.gps, provider?.gps);
+          const totalCost = distance * rate;
+
+          updatedFeeFields = {
+            fee: `$${(totalCost / 300.0).toFixed(2)}`,
+            distance: distance
+          };
+        }
+
         return {
           ...req,
           status,
           eta: additionalFields.eta || defaultEta,
-          ...additionalFields
+          ...additionalFields,
+          ...updatedFeeFields
         };
       }
       return req;

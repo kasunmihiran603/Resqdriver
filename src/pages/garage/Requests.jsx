@@ -30,9 +30,9 @@ const calculateDistanceKm = (lat1, lon1, lat2, lon2) => {
   const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
     Math.cos(lat1 * (Math.PI / 180)) *
-      Math.cos(lat2 * (Math.PI / 180)) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
+    Math.cos(lat2 * (Math.PI / 180)) *
+    Math.sin(dLon / 2) *
+    Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
 };
@@ -128,7 +128,7 @@ export const GarageRequests = () => {
       technician: { id: tech.id, name: tech.name, phone: tech.phone },
       eta: "20 mins"
     });
-    
+
     showToast(`Assigned ${tech.name} to dispatch.`, "success");
     setIsAssignOpen(false);
   };
@@ -156,6 +156,7 @@ export const GarageRequests = () => {
   const statusBadges = {
     pending: "bg-yellow-500/10 text-yellow-500 border-yellow-500/25",
     accepted: "bg-blue-500/10 text-blue-500 border-blue-500/25",
+    user_approved: "bg-emerald-500/10 text-emerald-600 border-emerald-500/25",
     technician_assigned: "bg-indigo-500/10 text-indigo-500 border-indigo-500/25",
     on_the_way: "bg-purple-500/10 text-purple-500 border-purple-500/25",
     repair_in_progress: "bg-sky-500/10 text-sky-500 border-sky-500/25",
@@ -199,7 +200,7 @@ export const GarageRequests = () => {
 
       {/* Data Views Container */}
       <div className="space-y-6">
-        
+
         {/* SECTION 1: UNCLAIMED (Available nearby) */}
         {(activeTab === "all" || activeTab === "unclaimed") && unclaimed.length > 0 && (
           <Card className="border-yellow-500/20 bg-yellow-500/[0.01]">
@@ -293,6 +294,10 @@ export const GarageRequests = () => {
                                     <Phone size={10} /> Call
                                   </a>
                                 </div>
+                              ) : req.status === "accepted" ? (
+                                <span className="text-[10px] font-bold text-amber-500 bg-amber-500/10 px-2 py-1 rounded border border-amber-500/25">
+                                  Awaiting User Approval
+                                </span>
                               ) : (
                                 <button onClick={() => handleOpenAssign(req)} className="text-primary font-bold hover:underline">
                                   + Assign Tech
@@ -305,7 +310,13 @@ export const GarageRequests = () => {
                                 <Button size="sm" variant="outline" className="h-8 text-xs px-2" onClick={() => setMapModalRequest(req)}>
                                   <Eye size={12} className="mr-1" /> Map
                                 </Button>
-                                <Button size="sm" variant="outline" className="h-8 text-xs px-2.5" onClick={() => handleOpenStatus(req)}>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-8 text-xs px-2.5"
+                                  disabled={req.status === "accepted"}
+                                  onClick={() => handleOpenStatus(req)}
+                                >
                                   Set Status
                                 </Button>
                               </div>
@@ -340,11 +351,23 @@ export const GarageRequests = () => {
                             <Eye size={12} className="mr-1" /> View Map
                           </Button>
                           {!req.technician ? (
-                            <Button size="sm" className="flex-1 text-xs h-9 px-3" onClick={() => handleOpenAssign(req)}>
-                              Assign Tech
-                            </Button>
+                            req.status === "accepted" ? (
+                              <Button disabled size="sm" className="flex-1 text-xs h-9 px-3 bg-muted text-muted-foreground border border-border">
+                                Awaiting Cost Approval
+                              </Button>
+                            ) : (
+                              <Button size="sm" className="flex-1 text-xs h-9 px-3" onClick={() => handleOpenAssign(req)}>
+                                Assign Tech
+                              </Button>
+                            )
                           ) : (
-                            <Button size="sm" variant="outline" className="flex-1 text-xs h-9 px-3" onClick={() => handleOpenStatus(req)}>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="flex-1 text-xs h-9 px-3"
+                              disabled={req.status === "accepted"}
+                              onClick={() => handleOpenStatus(req)}
+                            >
                               Change Status
                             </Button>
                           )}
