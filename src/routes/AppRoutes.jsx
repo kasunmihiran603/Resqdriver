@@ -17,10 +17,7 @@ import { UserVehicles } from "../pages/user/Vehicles";
 import { UserProfile } from "../pages/user/Profile";
 import { EditProfile } from "../pages/user/EditProfile";
 import { UserSettings } from "../pages/user/Settings";
-<<<<<<< HEAD
-=======
 import { UserTowingRequest } from "../pages/user/TowingRequest";
->>>>>>> 50bb981a01cbeb021f801ec1b45f60fe3d27db30
 import { PaymentBilling } from "../pages/user/PaymentBilling";
 
 // Garage Pages
@@ -44,11 +41,8 @@ import { TowingSettings } from "../pages/towing/Settings";
 import { AdminDashboard } from "../pages/admin/Dashboard";
 import { AdminUsers } from "../pages/admin/Users";
 import { AdminServices } from "../pages/admin/Services";
-<<<<<<< HEAD
 import { AuditDetails } from "../pages/admin/AuditDetails";
-=======
 import { AdminSettings } from "../pages/admin/Settings";
->>>>>>> 50bb981a01cbeb021f801ec1b45f60fe3d27db30
 
 // Root Redirect component
 const RootRedirect = () => {
@@ -147,11 +141,8 @@ export const AppRoutes = () => {
           <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="users" element={<AdminUsers />} />
           <Route path="services" element={<AdminServices />} />
-<<<<<<< HEAD
-          <Route path="audit/:id" element={<AuditDetails />} />
-=======
           <Route path="settings" element={<AdminSettings />} />
->>>>>>> 50bb981a01cbeb021f801ec1b45f60fe3d27db30
+          <Route path="audit/:id" element={<AuditDetails />} />
           <Route path="" element={<Navigate to="dashboard" replace />} />
         </Route>
 

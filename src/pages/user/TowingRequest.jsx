@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-import React, { useState, useEffect } from "react";
-=======
 import React, { useState, useRef, useEffect } from "react";
->>>>>>> 50bb981a01cbeb021f801ec1b45f60fe3d27db30
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import L from "leaflet";
@@ -250,11 +246,7 @@ export const UserTowingRequest = () => {
         towingId: null,
         garageId: null,
         eta: "Searching for tow truck...",
-<<<<<<< HEAD
         fee: estimatedCost > 0 ? `$${estimatedCost.toFixed(2)}` : "$5.00"
-=======
-        fee: "$180.00"
->>>>>>> 50bb981a01cbeb021f801ec1b45f60fe3d27db30
       });
       showToast("Towing request submitted! A driver will be assigned shortly.", "success");
       setSubmitting(false);

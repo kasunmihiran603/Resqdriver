@@ -34,14 +34,9 @@ const seedRequests = () => {
         technician: { id: "tech-1", name: "James R.", phone: "+1 (555) 018-9901" },
         towingId: null,
         eta: "14 mins",
-<<<<<<< HEAD
         timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString(), // 30 mins ago
-        fee: "LKR 1275.00",
+        fee: "$240.00",
         distance: 8.5
-=======
-        timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
-        fee: "$240.00"
->>>>>>> 50bb981a01cbeb021f801ec1b45f60fe3d27db30
       },
       {
         id: "req-2",
@@ -63,14 +58,9 @@ const seedRequests = () => {
         technician: { id: "tech-3", name: "David K.", phone: "+1 (555) 018-9903" },
         towingId: null,
         eta: "Completed",
-<<<<<<< HEAD
         timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
-        fee: "LKR 750.00",
+        fee: "$85.00",
         distance: 5.0
-=======
-        timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-        fee: "$85.00"
->>>>>>> 50bb981a01cbeb021f801ec1b45f60fe3d27db30
       },
       {
         id: "req-3",
@@ -92,14 +82,9 @@ const seedRequests = () => {
         towingName: "Rapid Towing & Recovery",
         technician: null,
         eta: "Pending Driver Assignment",
-<<<<<<< HEAD
         timestamp: new Date(Date.now() - 5 * 60 * 1000).toISOString(), // 5 mins ago
-        fee: "LKR 1800.00",
+        fee: "$180.00",
         distance: 9.0
-=======
-        timestamp: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
-        fee: "$180.00"
->>>>>>> 50bb981a01cbeb021f801ec1b45f60fe3d27db30
       },
       {
         id: "req-4",
@@ -121,14 +106,9 @@ const seedRequests = () => {
         technician: { id: "tech-1", name: "James R.", phone: "+1 (555) 018-9901" },
         towingId: null,
         eta: "Completed",
-<<<<<<< HEAD
         timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
-        fee: "LKR 1500.00",
+        fee: "$150.00",
         distance: 10.0
-=======
-        timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-        fee: "$150.00"
->>>>>>> 50bb981a01cbeb021f801ec1b45f60fe3d27db30
       }
     ];
     localStorage.setItem("vamp-requests", JSON.stringify(defaultRequests));
@@ -147,7 +127,7 @@ const seedTransactions = () => {
         garageId: "grg-1",
         garageName: "Apex Auto Care",
         vehicle: "Toyota RAV4 (TR-8923A)",
-        amount: "LKR 750.00",
+        amount: "$85.00",
         paymentMethod: "Visa ending 4521",
         status: "Successful",
         date: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()

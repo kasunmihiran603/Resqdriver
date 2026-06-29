@@ -327,16 +327,9 @@ export const AssistanceWizard = () => {
   };
 
   const handleSubmitRequest = () => {
-<<<<<<< HEAD
-    const vehicleObj = currentUser.vehicles.find((v) => v.id === selectedVehicle) || currentUser.vehicles[0];
-
-    if (!locationName.trim()) {
-      showToast("Please enter your current location description.", "error");
-=======
     if (!currentUser?.vehicles?.length) {
       showToast("Please register a vehicle first before requesting assistance.", "error");
       navigate("/user/vehicles");
->>>>>>> 50bb981a01cbeb021f801ec1b45f60fe3d27db30
       return;
     }
 
@@ -688,32 +681,12 @@ export const AssistanceWizard = () => {
             {/* GPS Map Location Selector (Right side) */}
             <div className="space-y-4">
               <div className="flex flex-col gap-1.5 text-left">
-<<<<<<< HEAD
-                <label className="text-sm font-semibold text-foreground">Emergency GPS Coordinates</label>
-
-                {/* Mock Map Image UI */}
-                <div className="border border-border rounded-xl h-56 relative overflow-hidden bg-sky-100 dark:bg-slate-900 border-b-0 rounded-b-none flex flex-col justify-center items-center text-center">
-                  <div className="absolute inset-0 opacity-30 bg-cover bg-center pointer-events-none" style={{ backgroundImage: "url('/maps-bg.png')" }} />
-                  {/* Grid Lines simulation */}
-                  <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]" />
-
-                  {/* Pin Indicator */}
-                  <motion.div
-                    animate={{ y: [0, -6, 0] }}
-                    transition={{ repeat: Infinity, duration: 1.5 }}
-                    className="z-10 text-rose-500 drop-shadow-md cursor-pointer flex flex-col items-center"
-                    onClick={() => {
-                      setGpsSim({ lat: 37.7749 + Math.random() * 0.01, lng: -122.4194 + Math.random() * 0.01 });
-                      showToast("GPS updated by tapping map.", "info");
-                    }}
-=======
                 <div className="flex items-center justify-between">
                   <label className="text-sm font-semibold text-foreground">Emergency GPS Coordinates</label>
                   <button
                     type="button"
                     onClick={handleGetCurrentLocation}
                     className="text-xs text-primary font-bold hover:underline flex items-center gap-1 cursor-pointer"
->>>>>>> 50bb981a01cbeb021f801ec1b45f60fe3d27db30
                   >
                     <Compass size={14} /> Detect Live Location
                   </button>

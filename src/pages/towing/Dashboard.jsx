@@ -75,14 +75,12 @@ export const TowingDashboard = () => {
   const { formatAmount } = useCurrency();
   const navigate = useNavigate();
 
-<<<<<<< HEAD
   const parseFee = (feeStr) => {
     if (!feeStr) return 0;
     return parseFloat(feeStr.replace(/[^0-9.]/g, "")) || 0;
   };
-=======
+
   const [mapModalRequest, setMapModalRequest] = useState(null);
->>>>>>> 50bb981a01cbeb021f801ec1b45f60fe3d27db30
 
   // Filter towing specific requests (category 'Accident' or explicitly assigned)
   const towingJobs = requests.filter((r) => r.towingId === currentUser.id);
