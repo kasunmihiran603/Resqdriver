@@ -61,15 +61,54 @@ export const Login = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-muted/30 px-4 py-12 relative overflow-hidden">
       
-      {/* Dynamic Background Accents */}
-      <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] rounded-full bg-primary/5 blur-3xl" />
-      <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-primary/5 blur-3xl" />
+      {/* Premium Framer Motion Floating Ambient Bubbles */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none -z-10 bg-gradient-to-br from-background via-muted to-background">
+        <motion.div
+          animate={{
+            x: [0, 80, -40, 0],
+            y: [0, -90, 60, 0],
+            scale: [1, 1.25, 0.85, 1],
+          }}
+          transition={{
+            duration: 18,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+          className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-primary/25 blur-[90px]"
+        />
+        <motion.div
+          animate={{
+            x: [0, -90, 50, 0],
+            y: [0, 80, -70, 0],
+            scale: [1, 0.85, 1.2, 1],
+          }}
+          transition={{
+            duration: 22,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+          className="absolute bottom-[-10%] right-[-10%] w-[450px] h-[450px] rounded-full bg-blue-500/25 blur-[90px]"
+        />
+        <motion.div
+          animate={{
+            x: [0, 50, -50, 0],
+            y: [0, 60, 60, 0],
+            scale: [0.8, 1.15, 0.9, 0.8],
+          }}
+          transition={{
+            duration: 15,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+          className="absolute top-[25%] left-[15%] w-[300px] h-[300px] rounded-full bg-emerald-500/20 blur-[80px]"
+        />
+      </div>
 
       <motion.div
         initial={{ opacity: 0, y: 25 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="w-full max-w-md"
+        className="w-full max-w-md relative z-10"
       >
         <Card className="shadow-xl border-border bg-card">
           <CardHeader className="text-center pb-4">
