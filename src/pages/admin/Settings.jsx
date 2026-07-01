@@ -56,9 +56,14 @@ export const AdminSettings = () => {
   };
 
   const handleClearData = () => {
-    if (window.confirm("Clear all local request data? This will remove all cached request history from this device and cannot be undone.")) {
+    if (window.confirm("Clear all local request, transaction, and notification data? This will reset all histories and cannot be undone.")) {
       localStorage.removeItem("vamp-requests");
-      showToast("Local data cleared successfully.", "info");
+      localStorage.removeItem("vamp-transactions");
+      localStorage.removeItem("vamp-notifications");
+      showToast("Local operational data cleared successfully. Re-seeding...", "info");
+      setTimeout(() => {
+        window.location.reload();
+      }, 800);
     }
   };
 
