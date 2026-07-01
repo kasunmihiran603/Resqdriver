@@ -52,7 +52,7 @@ export const AdminDashboard = () => {
   const garagesCount = allUsers.filter((u) => u.role === "garage").length;
   const towingCount = allUsers.filter((u) => u.role === "towing").length;
 
-  const activeIncidents = requests.filter((r) => r.status !== "completed");
+  const activeIncidents = requests.filter((r) => r.status !== "completed" && r.status !== "cancelled");
   const completedIncidents = requests.filter((r) => r.status === "completed");
 
   // Sum system-wide estimated fees

@@ -81,7 +81,7 @@ export const GarageDashboard = () => {
     }
     return true;
   });
-  const activeJobs = garageRequests.filter((r) => r.status !== "completed" && r.status !== "pending");
+  const activeJobs = garageRequests.filter((r) => r.status !== "completed" && r.status !== "pending" && r.status !== "cancelled");
   const completedJobs = garageRequests.filter((r) => r.status === "completed");
 
   const paidJobs = completedJobs.filter((r) => r.paymentStatus === "paid");

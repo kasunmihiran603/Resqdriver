@@ -27,7 +27,7 @@ export const UserDashboard = () => {
   const navigate = useNavigate();
 
   const userRequests = getRequestsByRole("user", currentUser?.id);
-  const activeRequests = userRequests.filter((r) => r.status !== "completed");
+  const activeRequests = userRequests.filter((r) => r.status !== "completed" && r.status !== "cancelled");
   const completedRequests = userRequests.filter((r) => r.status === "completed");
   const unpaidCompletedRequests = completedRequests.filter((r) => r.paymentStatus === "unpaid");
   

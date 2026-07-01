@@ -764,7 +764,7 @@ export const AssistanceWizard = () => {
                   size="sm"
                   onClick={() => {
                     if (window.confirm("Cancel this emergency assist request?")) {
-                      updateRequestStatus(activeRequest.id, "completed", { eta: "Cancelled", fee: "$0.00" });
+                      updateRequestStatus(activeRequest.id, "cancelled", { eta: "Cancelled", fee: "$0.00", paymentStatus: "none" });
                       showToast("Emergency signal cancelled.", "info");
                       navigate("/user/dashboard");
                     }

@@ -13,127 +13,14 @@ export const useRequests = () => {
 const seedRequests = () => {
   const cached = localStorage.getItem("vamp-requests");
   if (!cached) {
-    const defaultRequests = [
-      {
-        id: "req-1",
-        userId: "usr-1",
-        userName: "Alex Mercer",
-        userPhone: "+1 (555) 019-2834",
-        vehicle: { make: "Tesla", model: "Model S", year: "2022", plate: "E-DRIVE1" },
-        category: "Battery Issue",
-        symptoms: "Dead battery, dashboard lights flickered.",
-        description: "Stuck in downtown parking garage. Need a jumpstart.",
-        location: "284 Market Street, Downtown",
-        gps: { lat: 37.7749, lng: -122.4194 },
-        imageSimulated: false,
-        audioSimulated: false,
-        status: "on_the_way",
-        paymentStatus: "unpaid",
-        garageId: "grg-1",
-        garageName: "Apex Auto Care",
-        technician: { id: "tech-1", name: "James R.", phone: "+1 (555) 018-9901" },
-        towingId: null,
-        eta: "14 mins",
-        timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString(), // 30 mins ago
-        fee: "$240.00",
-        distance: 8.5
-      },
-      {
-        id: "req-2",
-        userId: "usr-1",
-        userName: "Alex Mercer",
-        userPhone: "+1 (555) 019-2834",
-        vehicle: { make: "Toyota", model: "RAV4", year: "2019", plate: "TR-8923A" },
-        category: "Tire Issue",
-        symptoms: "Right rear tire pressure dropping rapidly.",
-        description: "Ran over a metal nail in the construction zone. Spare tire is in trunk but I do not have a jack.",
-        location: "284 Market Street, Downtown",
-        gps: { lat: 37.7749, lng: -122.4194 },
-        imageSimulated: false,
-        audioSimulated: true,
-        status: "completed",
-        paymentStatus: "paid",
-        garageId: "grg-1",
-        garageName: "Apex Auto Care",
-        technician: { id: "tech-3", name: "David K.", phone: "+1 (555) 018-9903" },
-        towingId: null,
-        eta: "Completed",
-        timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
-        fee: "$85.00",
-        distance: 5.0
-      },
-      {
-        id: "req-3",
-        userId: "usr-2",
-        userName: "Sarah Connor",
-        userPhone: "+1 (555) 012-7744",
-        vehicle: { make: "Ford", model: "F-150", year: "2018", plate: "R-TRUCK", insurance: "Allstate" },
-        category: "Accident",
-        symptoms: "Fender bender, front bumper detached, radiator leaking.",
-        description: "Rear-ended by a sedan. Coolant is leaking, cannot start engine without smoke. Need towing to local garage.",
-        location: "Intersection of 5th Ave and Lincoln St",
-        gps: { lat: 37.7698, lng: -122.4468 },
-        imageSimulated: true,
-        audioSimulated: true,
-        status: "pending",
-        paymentStatus: "unpaid",
-        garageId: null,
-        towingId: "tow-1",
-        towingName: "Rapid Towing & Recovery",
-        technician: null,
-        eta: "Pending Driver Assignment",
-        timestamp: new Date(Date.now() - 5 * 60 * 1000).toISOString(), // 5 mins ago
-        fee: "$180.00",
-        distance: 9.0
-      },
-      {
-        id: "req-4",
-        userId: "usr-1",
-        userName: "Alex Mercer",
-        userPhone: "+1 (555) 019-2834",
-        vehicle: { make: "Tesla", model: "Model S", year: "2022", plate: "E-DRIVE1" },
-        category: "Battery Issue",
-        symptoms: "Dead battery, click click sound on startup.",
-        description: "Battery drained overnight due to cabin overhead light being left on.",
-        location: "555 Oakwood Lane, Suburbs",
-        gps: { lat: 37.7550, lng: -122.4300 },
-        imageSimulated: false,
-        audioSimulated: false,
-        status: "completed",
-        paymentStatus: "unpaid",
-        garageId: "grg-1",
-        garageName: "Apex Auto Care",
-        technician: { id: "tech-1", name: "James R.", phone: "+1 (555) 018-9901" },
-        towingId: null,
-        eta: "Completed",
-        timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
-        fee: "$150.00",
-        distance: 10.0
-      }
-    ];
-    localStorage.setItem("vamp-requests", JSON.stringify(defaultRequests));
+    localStorage.setItem("vamp-requests", JSON.stringify([]));
   }
 };
 
 const seedTransactions = () => {
   const transactions = localStorage.getItem("vamp-transactions");
   if (!transactions) {
-    const defaultTransactions = [
-      {
-        id: "TXN-100201",
-        requestId: "req-2",
-        userId: "usr-1",
-        userName: "Alex Mercer",
-        garageId: "grg-1",
-        garageName: "Apex Auto Care",
-        vehicle: "Toyota RAV4 (TR-8923A)",
-        amount: "$85.00",
-        paymentMethod: "Visa ending 4521",
-        status: "Successful",
-        date: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
-      }
-    ];
-    localStorage.setItem("vamp-transactions", JSON.stringify(defaultTransactions));
+    localStorage.setItem("vamp-transactions", JSON.stringify([]));
   }
 };
 

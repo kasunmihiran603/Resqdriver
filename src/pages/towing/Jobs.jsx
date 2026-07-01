@@ -75,7 +75,7 @@ export const TowingJobs = () => {
   const navigate = useNavigate();
 
   const towingJobs = requests.filter((r) => r.towingId === currentUser.id);
-  const activeJob = towingJobs.find((r) => r.status !== "completed");
+  const activeJob = towingJobs.find((r) => r.status !== "completed" && r.status !== "cancelled");
   const unclaimedTows = requests.filter(
     (r) => r.status === "pending" && !r.towingId && (r.isTowingRequest || r.category === "Accident")
   );

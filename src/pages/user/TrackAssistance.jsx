@@ -507,7 +507,7 @@ export const TrackAssistance = () => {
   const focusRequestId = location.state?.focusRequestId ?? null;
 
   const activeRequests = requests.filter(
-    (r) => r.userId === currentUser?.id && r.status !== "completed"
+    (r) => r.userId === currentUser?.id && r.status !== "completed" && r.status !== "cancelled"
   );
 
   const displayRequests = focusRequestId
@@ -520,7 +520,7 @@ export const TrackAssistance = () => {
   const handleCancel = (id, isTow) => {
     const msg = isTow ? "Cancel this tow request?" : "Cancel this emergency assist request?";
     if (window.confirm(msg)) {
-      updateRequestStatus(id, "completed", { eta: "Cancelled", fee: "$0.00" });
+      updateRequestStatus(id, "cancelled", { eta: "Cancelled", fee: "$0.00", paymentStatus: "none" });
       showToast(isTow ? "Tow request cancelled." : "Emergency signal cancelled.", "info");
     }
   };

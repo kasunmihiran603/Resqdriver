@@ -100,7 +100,7 @@ export const GarageRequests = () => {
     }
     return true;
   });
-  const active = requests.filter((r) => r.garageId === currentUser.id && r.status !== "completed");
+  const active = requests.filter((r) => r.garageId === currentUser.id && r.status !== "completed" && r.status !== "cancelled");
   const completed = requests.filter((r) => r.garageId === currentUser.id && r.status === "completed");
 
   const handleClaim = (reqId) => {
