@@ -7,8 +7,8 @@ import { Button } from "../../components/ui/Button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../../components/ui/Card";
 import { Input } from "../../components/ui/Input";
 import { Select } from "../../components/ui/Select";
-import { Truck, Car, Wrench, ShieldAlert, ShieldCheck } from "lucide-react";
-import { motion } from "framer-motion";
+import { Truck, Car, Wrench, ShieldAlert, ShieldCheck, Database, X } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 export const Login = () => {
   const { login } = useAuth();
@@ -16,6 +16,7 @@ export const Login = () => {
   const navigate = useNavigate();
   const [selectedRole, setSelectedRole] = useState("user");
   const [loading, setLoading] = useState(false);
+  const [showEvaluatorPanel, setShowEvaluatorPanel] = useState(false);
 
   const {
     register,
@@ -31,14 +32,13 @@ export const Login = () => {
 
   const onSubmit = (data) => {
     setLoading(true);
-    // Simulate slight delay for luxury animations
     setTimeout(() => {
-      const result = login(data.email, data.password, selectedRole);
+      const result = login(data.email, data.password);
       setLoading(false);
       
       if (result.success) {
-        showToast(`Welcome back! Successfully logged in as ${selectedRole}.`, "success");
-        navigate(`/${selectedRole}/dashboard`);
+        showToast(`Welcome back! Successfully logged in.`, "success");
+        navigate(`/${result.role}/dashboard`);
       } else {
         showToast(result.message, "error");
       }
@@ -53,10 +53,9 @@ export const Login = () => {
   };
 
   const roles = [
-    { id: "user", label: "Driver", icon: <Car size={18} />, color: "border-blue-500/30 text-blue-500 bg-blue-500/5" },
-    { id: "garage", label: "Garage", icon: <Wrench size={18} />, color: "border-emerald-500/30 text-emerald-500 bg-emerald-500/5" },
-    { id: "towing", label: "Towing", icon: <Truck size={18} />, color: "border-amber-500/30 text-amber-500 bg-amber-500/5" },
-    { id: "admin", label: "Admin", icon: <ShieldCheck size={18} />, color: "border-rose-500/30 text-rose-500 bg-rose-500/5" }
+    { id: "user", label: "Driver", icon: <Car size={16} />, color: "border-blue-500/20 text-blue-500 bg-blue-500/5 hover:bg-blue-500/10 hover:border-blue-500/40" },
+    { id: "garage", label: "Garage", icon: <Wrench size={16} />, color: "border-emerald-500/20 text-emerald-500 bg-emerald-500/5 hover:bg-emerald-500/10 hover:border-emerald-500/40" },
+    { id: "towing", label: "Towing", icon: <Truck size={16} />, color: "border-amber-500/20 text-amber-500 bg-amber-500/5 hover:bg-amber-500/10 hover:border-amber-500/40" }
   ];
 
   return (
@@ -83,26 +82,6 @@ export const Login = () => {
           
           <CardContent className="space-y-6">
             
-            {/* Quick Demo Pre-fill */}
-            <div className="p-3 bg-muted/50 border border-border/80 rounded-xl">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2 text-center">
-                Evaluation Panel (Click to pre-fill)
-              </p>
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                {roles.map((r) => (
-                  <button
-                    key={r.id}
-                    type="button"
-                    onClick={() => prefill(r.id)}
-                    className="flex items-center justify-center gap-1.5 p-2 bg-card hover:bg-muted border border-border rounded-lg font-bold text-foreground cursor-pointer transition-colors shadow-2xs"
-                  >
-                    {r.icon}
-                    {r.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
             {/* Form */}
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               
@@ -163,6 +142,72 @@ export const Login = () => {
           </CardContent>
         </Card>
       </motion.div>
+
+      {/* Floating System Evaluator Portal */}
+      <div className="fixed bottom-4 right-4 z-50 flex flex-col items-end gap-2">
+        <AnimatePresence>
+          {showEvaluatorPanel && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 10 }}
+              className="bg-card/95 backdrop-blur-md border border-border p-4 rounded-2xl shadow-2xl w-80 space-y-3"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-primary">
+                  <Database size={15} />
+                  <span className="text-xs font-black uppercase tracking-wider">Evaluation Portal</span>
+                </div>
+                <button
+                  onClick={() => setShowEvaluatorPanel(false)}
+                  className="p-1 rounded-md hover:bg-muted text-muted-foreground cursor-pointer"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+              <p className="text-[10px] text-muted-foreground leading-relaxed">
+                Click a role below to auto-fill mock credentials. Log in as <b>admin@test.com</b> for Admin settings.
+              </p>
+              <div className="grid grid-cols-3 gap-1.5 pt-1">
+                {roles.map((r) => (
+                  <button
+                    key={r.id}
+                    type="button"
+                    onClick={() => {
+                      prefill(r.id);
+                      setShowEvaluatorPanel(false);
+                    }}
+                    className={`flex flex-col items-center justify-center gap-1 p-2 border rounded-xl font-bold cursor-pointer transition-all text-[9px] ${r.color}`}
+                  >
+                    {r.icon}
+                    <span>{r.label}</span>
+                  </button>
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setValue("email", "admin@test.com");
+                  setValue("password", "password");
+                  showToast("Pre-filled login details for Admin.", "info");
+                  setShowEvaluatorPanel(false);
+                }}
+                className="w-full text-center py-1.5 border border-rose-500/20 text-rose-500 bg-rose-500/5 hover:bg-rose-500/10 rounded-xl font-bold text-[9px] cursor-pointer"
+              >
+                ⚙️ Quick-Fill Super Admin
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <button
+          onClick={() => setShowEvaluatorPanel(!showEvaluatorPanel)}
+          className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-[10px] px-3.5 py-2 rounded-full shadow-lg flex items-center gap-1.5 cursor-pointer uppercase tracking-wider"
+        >
+          <Database size={12} />
+          Evaluator Mode
+        </button>
+      </div>
     </div>
   );
 };

@@ -89,18 +89,18 @@ export const AuthProvider = ({ children }) => {
     seedUsers();
   }, []);
 
-  const login = (email, password, role) => {
+  const login = (email, password) => {
     const users = JSON.parse(localStorage.getItem("vamp-users") || "[]");
     const foundUser = users.find(
-      (u) => u.email.toLowerCase() === email.toLowerCase() && u.password === password && u.role === role
+      (u) => u.email.toLowerCase() === email.toLowerCase() && u.password === password
     );
 
     if (foundUser) {
       setCurrentUser(foundUser);
       localStorage.setItem("vamp-current-user", JSON.stringify(foundUser));
-      return { success: true };
+      return { success: true, role: foundUser.role };
     }
-    return { success: false, message: "Invalid email, password, or role choice." };
+    return { success: false, message: "Invalid email or password." };
   };
 
   const register = (details) => {
