@@ -220,7 +220,7 @@ export const UserTowingRequest = () => {
     return true;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     setSubmitting(true);
     const v = getSelectedVehicle();
 
@@ -232,9 +232,8 @@ export const UserTowingRequest = () => {
       ? dropoff.trim()
       : `GPS Dropoff (${dropoffGps.lat.toFixed(4)}, ${dropoffGps.lng.toFixed(4)})`;
 
-    setTimeout(() => {
-      createRequest({
-        userId: currentUser.id,
+    try {
+      await createRequest({
         userName: currentUser.name,
         userPhone: currentUser.phone || "",
         vehicle: { make: v.make, model: v.model, year: v.year || "", plate: v.plate, insurance: v.insurance || "" },
@@ -252,9 +251,12 @@ export const UserTowingRequest = () => {
         fee: estimatedCost > 0 ? `$${estimatedCost.toFixed(2)}` : "$5.00"
       });
       showToast("Towing request submitted! A driver will be assigned shortly.", "success");
-      setSubmitting(false);
       navigate("/user/track");
-    }, 700);
+    } catch (err) {
+      showToast("Failed to submit request", "error");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const selectedVehicle = getSelectedVehicle();
