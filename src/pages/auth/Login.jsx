@@ -30,26 +30,24 @@ export const Login = () => {
     }
   });
 
-  const onSubmit = (data) => {
+  const onSubmit = async (data) => {
     setLoading(true);
-    setTimeout(() => {
-      const result = login(data.email, data.password);
-      setLoading(false);
-      
-      if (result.success) {
-        showToast(`Welcome back! Successfully logged in.`, "success");
-        navigate(`/${result.role}/dashboard`);
-      } else {
-        showToast(result.message, "error");
-      }
-    }, 800);
+    const result = await login(data.email, data.password, selectedRole);
+    setLoading(false);
+
+    if (result.success) {
+      showToast(⁠ Welcome back! Successfully logged in. ⁠, "success");
+      navigate(⁠ /${result.role}/dashboard ⁠);
+    } else {
+      showToast(result.message, "error");
+    }
   };
 
   const prefill = (role) => {
     setSelectedRole(role);
-    setValue("email", `${role}@test.com`);
+    setValue("email", ⁠ ${ role }@test.com ⁠);
     setValue("password", "password");
-    showToast(`Pre-filled login details for ${role}.`, "info");
+    showToast(⁠ Pre - filled login details for ${ role }. ⁠, "info");
   };
 
   const roles = [
@@ -60,7 +58,7 @@ export const Login = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-muted/30 px-4 py-12 relative overflow-hidden">
-      
+
       {/* Premium Framer Motion Floating Ambient Bubbles */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none -z-10 bg-gradient-to-br from-background via-muted to-background">
         <motion.div
@@ -118,12 +116,12 @@ export const Login = () => {
             <CardTitle className="text-2xl font-bold">Sign In to VAMP</CardTitle>
             <CardDescription>Vehicle Assistance & Emergency Management</CardDescription>
           </CardHeader>
-          
+
           <CardContent className="space-y-6">
-            
+
             {/* Form */}
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-              
+
               {/* Email */}
               <Input
                 label="Email Address"
@@ -177,7 +175,7 @@ export const Login = () => {
                 Create account
               </Link>
             </div>
-            
+
           </CardContent>
         </Card>
       </motion.div>
@@ -216,7 +214,7 @@ export const Login = () => {
                       prefill(r.id);
                       setShowEvaluatorPanel(false);
                     }}
-                    className={`flex flex-col items-center justify-center gap-1 p-2 border rounded-xl font-bold cursor-pointer transition-all text-[9px] ${r.color}`}
+                    className={⁠ flex flex-col items-center justify-center gap-1 p-2 border rounded-xl font-bold cursor-pointer transition-all text-[9px] ${r.color} ⁠}
                   >
                     {r.icon}
                     <span>{r.label}</span>
@@ -237,16 +235,16 @@ export const Login = () => {
               </button>
             </motion.div>
           )}
-        </AnimatePresence>
+      </AnimatePresence>
 
-        <button
-          onClick={() => setShowEvaluatorPanel(!showEvaluatorPanel)}
-          className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-[10px] px-3.5 py-2 rounded-full shadow-lg flex items-center gap-1.5 cursor-pointer uppercase tracking-wider"
-        >
-          <Database size={12} />
-          Evaluator Mode
-        </button>
-      </div>
+      <button
+        onClick={() => setShowEvaluatorPanel(!showEvaluatorPanel)}
+        className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-[10px] px-3.5 py-2 rounded-full shadow-lg flex items-center gap-1.5 cursor-pointer uppercase tracking-wider"
+      >
+        <Database size={12} />
+        Evaluator Mode
+      </button>
     </div>
+    </div >
   );
 };

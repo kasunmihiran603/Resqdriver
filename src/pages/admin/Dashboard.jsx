@@ -1,9 +1,10 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useRequests } from "../../context/RequestContext";
 import { useCurrency } from "../../context/CurrencyContext";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
+import api from "../../context/api";
 import {
   Users,
   ShieldCheck,
@@ -45,9 +46,20 @@ export const AdminDashboard = () => {
     return parseFloat(feeStr.replace(/[^0-9.]/g, "")) || 0;
   };
 
-  // Load all registered users from localStorage to count
-  const allUsers = JSON.parse(localStorage.getItem("vamp-users") || "[]");
-  
+  const [allUsers, setAllUsers] = useState([]);
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const res = await api.get("/api/users");
+        setAllUsers(res.data || []);
+      } catch (err) {
+        console.error("Failed to fetch users", err);
+      }
+    };
+    fetchUsers();
+  }, []);
+
   const driversCount = allUsers.filter((u) => u.role === "user").length;
   const garagesCount = allUsers.filter((u) => u.role === "garage").length;
   const towingCount = allUsers.filter((u) => u.role === "towing").length;
@@ -117,7 +129,7 @@ export const AdminDashboard = () => {
 
   return (
     <div className="space-y-6 text-left">
-      
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -136,7 +148,7 @@ export const AdminDashboard = () => {
 
       {/* Global stats grids */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        
+
         <Card className="border-border/80">
           <CardContent className="p-5 flex items-center justify-between">
             <div className="space-y-1">
@@ -193,7 +205,7 @@ export const AdminDashboard = () => {
 
       {/* Visual analytics plots */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
+
         {/* Weekly signups */}
         <Card className="lg:col-span-2 border-border/80">
           <CardHeader>
@@ -242,13 +254,13 @@ export const AdminDashboard = () => {
                       dataKey="value"
                     >
                       {pieData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
+                        <Cell key={⁠ cell-${index} ⁠} fill={entry.color} />
                       ))}
                     </Pie>
                     <Tooltip />
                   </PieChart>
                 </ResponsiveContainer>
-                
+
                 {/* Labels list */}
                 <div className="grid grid-cols-2 gap-2 text-[9px] font-bold text-muted-foreground mt-2 w-full px-2">
                   {pieData.map((s, idx) => (
@@ -270,7 +282,7 @@ export const AdminDashboard = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
+
         {/* Active Incidents logs preview */}
         <Card className="lg:col-span-2 border-border/80">
           <CardHeader className="pb-3 border-b">
@@ -336,7 +348,7 @@ export const AdminDashboard = () => {
       {/* Admin Billing & Settlements Additions */}
       <div className="space-y-4 text-left">
         <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Financial Infrastructure Dues</h3>
-        
+
         {/* Stats Row */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Card className="border-border/80">
@@ -381,7 +393,7 @@ export const AdminDashboard = () => {
 
         {/* Transactions Table & Chart Split */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          
+
           {/* Table */}
           <Card className="lg:col-span-2 border-border/80">
             <CardHeader className="pb-3 border-b">

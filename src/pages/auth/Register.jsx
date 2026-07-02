@@ -60,7 +60,7 @@ export const Register = () => {
     setStep(2);
   };
 
-  const onSubmit = (data) => {
+  const onSubmit = async (data) => {
     if (!isAgreed) {
       showToast("Please agree to the Terms and Conditions to proceed.", "error");
       return;
@@ -107,17 +107,15 @@ export const Register = () => {
       finalDetails.status = "available";
     }
 
-    setTimeout(() => {
-      const result = authRegister(finalDetails);
-      setLoading(false);
-      
-      if (result.success) {
-        showToast("Registration successful! Account generated.", "success");
-        navigate(`/${selectedRole}/dashboard`);
-      } else {
-        showToast(result.message, "error");
-      }
-    }, 800);
+    const result = await authRegister(finalDetails);
+    setLoading(false);
+    
+    if (result.success) {
+      showToast("Registration successful! Account generated.", "success");
+      navigate(`/${selectedRole}/dashboard`);
+    } else {
+      showToast(result.message, "error");
+    }
   };
 
   const roles = [
