@@ -36,8 +36,8 @@ export const Login = () => {
     setLoading(false);
 
     if (result.success) {
-      showToast(⁠ Welcome back! Successfully logged in. ⁠, "success");
-      navigate(⁠ /${result.role}/dashboard ⁠);
+      showToast(`Welcome back! Successfully logged in.`, "success");
+      navigate(`/${result.role}/dashboard`);
     } else {
       showToast(result.message, "error");
     }
@@ -45,9 +45,9 @@ export const Login = () => {
 
   const prefill = (role) => {
     setSelectedRole(role);
-    setValue("email", ⁠ ${ role }@test.com ⁠);
+    setValue("email", `${role}@test.com`);
     setValue("password", "password");
-    showToast(⁠ Pre - filled login details for ${ role }. ⁠, "info");
+    showToast(`Pre-filled login details for ${role}.`, "info");
   };
 
   const roles = [
@@ -214,7 +214,7 @@ export const Login = () => {
                       prefill(r.id);
                       setShowEvaluatorPanel(false);
                     }}
-                    className={⁠ flex flex-col items-center justify-center gap-1 p-2 border rounded-xl font-bold cursor-pointer transition-all text-[9px] ${r.color} ⁠}
+                    className={`flex flex-col items-center justify-center gap-1 p-2 border rounded-xl font-bold cursor-pointer transition-all text-[9px] ${r.color}`}
                   >
                     {r.icon}
                     <span>{r.label}</span>
@@ -235,16 +235,16 @@ export const Login = () => {
               </button>
             </motion.div>
           )}
-      </AnimatePresence>
+        </AnimatePresence>
 
-      <button
-        onClick={() => setShowEvaluatorPanel(!showEvaluatorPanel)}
-        className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-[10px] px-3.5 py-2 rounded-full shadow-lg flex items-center gap-1.5 cursor-pointer uppercase tracking-wider"
-      >
-        <Database size={12} />
-        Evaluator Mode
-      </button>
+        <button
+          onClick={() => setShowEvaluatorPanel(!showEvaluatorPanel)}
+          className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-[10px] px-3.5 py-2 rounded-full shadow-lg flex items-center gap-1.5 cursor-pointer uppercase tracking-wider"
+        >
+          <Database size={12} />
+          Evaluator Mode
+        </button>
+      </div>
     </div>
-    </div >
   );
 };
