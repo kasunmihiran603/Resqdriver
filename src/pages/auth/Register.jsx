@@ -14,7 +14,7 @@ export const Register = () => {
   const { register: authRegister } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
-  
+
   const [step, setStep] = useState(1);
   const [selectedRole, setSelectedRole] = useState("user");
   const [loading, setLoading] = useState(false);
@@ -66,7 +66,7 @@ export const Register = () => {
       return;
     }
     setLoading(true);
-    
+
     // Assemble final user object depending on role
     const finalDetails = {
       name: data.name,
@@ -109,7 +109,7 @@ export const Register = () => {
 
     const result = await authRegister(finalDetails);
     setLoading(false);
-    
+
     if (result.success) {
       showToast("Registration successful! Account generated.", "success");
       navigate(`/${selectedRole}/dashboard`);
@@ -200,11 +200,10 @@ export const Register = () => {
                               key={r.id}
                               type="button"
                               onClick={() => setSelectedRole(r.id)}
-                              className={`flex flex-col items-center justify-center p-3 rounded-xl border text-center transition-all cursor-pointer ${
-                                isSelected
+                              className={`flex flex-col items-center justify-center p-3 rounded-xl border text-center transition-all cursor-pointer ${isSelected
                                   ? "border-primary bg-primary/10 text-primary ring-2 ring-primary/20 font-bold"
                                   : "border-border bg-card text-muted-foreground hover:bg-muted/40"
-                              }`}
+                                }`}
                             >
                               <div className="mb-2">{r.icon}</div>
                               <span className="text-xs font-bold">{r.label}</span>
