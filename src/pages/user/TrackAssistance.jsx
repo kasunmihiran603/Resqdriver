@@ -7,6 +7,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useRequests } from "../../context/RequestContext";
 import { useToast } from "../../context/ToastContext";
 import { useCurrency } from "../../context/CurrencyContext";
+import api from "../../context/api";
 import { Card, CardHeader, CardTitle, CardContent } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import { Timeline } from "../../components/ui/Timeline";
@@ -26,6 +27,23 @@ L.Icon.Default.mergeOptions({
 const NearbyGaragesMap = ({ userGps }) => {
   const mapRef = useRef(null);
   const leafletMap = useRef(null);
+  const [garages, setGarages] = useState([]);
+
+  useEffect(() => {
+    const fetchGarages = async () => {
+      try {
+        const res = await api.get("/api/users?role=garage");
+        setGarages(res.data || []);
+      } catch (err) {
+        console.error("Error fetching garages from API", err);
+        try {
+          const allUsers = JSON.parse(localStorage.getItem("vamp-users") || "[]");
+          setGarages(allUsers.filter((u) => u.role === "garage"));
+        } catch (e) {}
+      }
+    };
+    fetchGarages();
+  }, []);
 
   useEffect(() => {
     if (!mapRef.current) return;
@@ -40,21 +58,13 @@ const NearbyGaragesMap = ({ userGps }) => {
     const userMarker = L.marker([uGps.lat, uGps.lng]).addTo(map);
     userMarker.bindPopup("<b>📍 Your Breakdown Location</b>").openPopup();
 
-    // Fetch registered garages from localStorage and display markers for nearby partners
-    try {
-      const allUsers = JSON.parse(localStorage.getItem("vamp-users") || "[]");
-      const garages = allUsers.filter((u) => u.role === "garage");
-
-      garages.forEach((g) => {
-        if (g.gps && g.gps.lat && g.gps.lng) {
-          const gMarker = L.marker([g.gps.lat, g.gps.lng]).addTo(map);
-          gMarker.bindPopup(`<b>🔧 ${g.name}</b><br/>${g.address || "Available Service Center"}<br/><span style="color:#10b981;font-weight:bold;">Active Broadcast Partner</span>`);
-        }
-      });
-    } catch (e) {
-      const gMarker = L.marker([37.7749, -122.4194]).addTo(map);
-      gMarker.bindPopup("<b>🔧 Apex Auto Care</b><br/>Available Service Center");
-    }
+    // Display markers for nearby partners
+    garages.forEach((g) => {
+      if (g.gps && g.gps.lat && g.gps.lng) {
+        const gMarker = L.marker([g.gps.lat, g.gps.lng]).addTo(map);
+        gMarker.bindPopup(`<b>🔧 ${g.name}</b><br/>${g.address || "Available Service Center"}<br/><span style="color:#10b981;font-weight:bold;">Active Broadcast Partner</span>`);
+      }
+    });
 
     const timer = setTimeout(() => {
       if (map) map.invalidateSize();
@@ -69,7 +79,7 @@ const NearbyGaragesMap = ({ userGps }) => {
         leafletMap.current = null;
       }
     };
-  }, [userGps]);
+  }, [userGps, garages]);
 
   return <div ref={mapRef} className="w-full h-56 rounded-xl border border-border overflow-hidden z-0 relative" />;
 };
@@ -310,6 +320,24 @@ const GarageTrackCard = ({ req, onCancel, onApproveCost, focused }) => {
     return parseFloat(feeStr.replace(/[^0-9.]/g, "")) || 0;
   };
 
+  const [garageGps, setGarageGps] = useState(null);
+
+  useEffect(() => {
+    if (!req.garageId) return;
+    const fetchGarage = async () => {
+      try {
+        const res = await api.get("/api/users");
+        const found = (res.data || []).find((u) => u.id === req.garageId || u.name === req.garageName);
+        if (found && found.gps) {
+          setGarageGps(found.gps);
+        }
+      } catch (err) {
+        console.error("Error fetching garage details", err);
+      }
+    };
+    fetchGarage();
+  }, [req.garageId, req.garageName]);
+
   useEffect(() => {
     if (focused && cardRef.current) {
       cardRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -317,7 +345,7 @@ const GarageTrackCard = ({ req, onCancel, onApproveCost, focused }) => {
   }, [focused]);
 
   // Dynamic garage location lookup for exact accepted partner GPS
-  const targetGarageGps = (() => {
+  const targetGarageGps = garageGps || (() => {
     try {
       const users = JSON.parse(localStorage.getItem("vamp-users") || "[]");
       const found = users.find((u) => u.id === req.garageId || u.name === req.garageName);
@@ -507,7 +535,7 @@ export const TrackAssistance = () => {
   const focusRequestId = location.state?.focusRequestId ?? null;
 
   const activeRequests = requests.filter(
-    (r) => r.userId === currentUser?.id && r.status !== "completed" && r.status !== "cancelled"
+    (r) => r.userId === currentUser?.id && r.status !== "completed"
   );
 
   const displayRequests = focusRequestId
@@ -520,7 +548,7 @@ export const TrackAssistance = () => {
   const handleCancel = (id, isTow) => {
     const msg = isTow ? "Cancel this tow request?" : "Cancel this emergency assist request?";
     if (window.confirm(msg)) {
-      updateRequestStatus(id, "cancelled", { eta: "Cancelled", fee: "$0.00", paymentStatus: "none" });
+      updateRequestStatus(id, "completed", { eta: "Cancelled", fee: "$0.00" });
       showToast(isTow ? "Tow request cancelled." : "Emergency signal cancelled.", "info");
     }
   };
