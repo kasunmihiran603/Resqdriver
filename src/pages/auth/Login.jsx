@@ -224,6 +224,7 @@ export const Login = () => {
               <button
                 type="button"
                 onClick={() => {
+                  setSelectedRole("admin");
                   setValue("email", "admin@test.com");
                   setValue("password", "password");
                   showToast("Pre-filled login details for Admin.", "info");
