@@ -326,7 +326,7 @@ export const AssistanceWizard = () => {
     }
   };
 
-  const handleSubmitRequest = () => {
+  const handleSubmitRequest = async () => {
     if (!currentUser?.vehicles?.length) {
       showToast("Please register a vehicle first before requesting assistance.", "error");
       navigate("/user/vehicles");
@@ -359,9 +359,13 @@ export const AssistanceWizard = () => {
       fee: estimatedCost > 0 ? `$${estimatedCost.toFixed(2)}` : "$5.00"
     };
 
-    createRequest(payload);
-    showToast("Emergency dispatch signal sent!", "success");
-    navigate("/user/track");
+    try {
+      await createRequest(payload);
+      showToast("Emergency dispatch signal sent!", "success");
+      navigate("/user/track");
+    } catch (err) {
+      showToast("Failed to dispatch emergency request", "error");
+    }
   };
 
   // Status updates mapping for tracker

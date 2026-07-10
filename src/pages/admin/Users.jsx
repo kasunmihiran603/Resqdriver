@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { useAuth } from "../../context/AuthContext";
+import React, { useState, useEffect } from "react";
+import api from "../../context/api";
 import { useToast } from "../../context/ToastContext";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
@@ -9,37 +9,48 @@ import { Users, ShieldAlert, CheckCircle, ShieldX, Search } from "lucide-react";
 export const AdminUsers = () => {
   const { showToast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
-  
-  // Read all users from local storage
-  const [userList, setUserList] = useState(() => {
-    return JSON.parse(localStorage.getItem("vamp-users") || "[]");
-  });
+  const [userList, setUserList] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleToggleSuspend = (userId) => {
-    const list = userList.map((u) => {
-      if (u.id === userId) {
-        const isSuspended = !!u.suspended;
-        return { ...u, suspended: !isSuspended };
-      }
-      return u;
-    });
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+      const res = await api.get("/api/users");
+      setUserList(res.data || []);
+    } catch (err) {
+      showToast("Failed to fetch users", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    setUserList(list);
-    localStorage.setItem("vamp-users", JSON.stringify(list));
-    
-    const uObj = list.find((u) => u.id === userId);
-    showToast(
-      uObj.suspended ? `Suspended account for ${uObj.name}.` : `Restored access for ${uObj.name}.`,
-      uObj.suspended ? "error" : "success"
-    );
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  const handleToggleSuspend = async (userId) => {
+    const user = userList.find((u) => u.id === userId);
+    if (!user) return;
+
+    const nextSuspended = !user.suspended;
+    try {
+      await api.put(`/api/users/${userId}`, { suspended: nextSuspended });
+      setUserList(userList.map((u) => u.id === userId ? { ...u, suspended: nextSuspended } : u));
+      showToast(
+        nextSuspended ? `Suspended account for ${user.name}.` : `Restored access for ${user.name}.`,
+        nextSuspended ? "error" : "success"
+      );
+    } catch (err) {
+      showToast("Failed to update user status", "error");
+    }
   };
 
   const filteredUsers = userList.filter((u) => {
     const text = searchTerm.toLowerCase();
     return (
-      u.name.toLowerCase().includes(text) ||
-      u.email.toLowerCase().includes(text) ||
-      u.role.toLowerCase().includes(text)
+      (u.name && u.name.toLowerCase().includes(text)) ||
+      (u.email && u.email.toLowerCase().includes(text)) ||
+      (u.role && u.role.toLowerCase().includes(text))
     );
   });
 
@@ -73,7 +84,11 @@ export const AdminUsers = () => {
       {/* Accounts list */}
       <Card className="border-border/80">
         <CardContent className="p-0">
-          {filteredUsers.length > 0 ? (
+          {loading ? (
+            <div className="text-center py-16 text-xs text-muted-foreground">
+              Loading users...
+            </div>
+          ) : filteredUsers.length > 0 ? (
             <div className="overflow-x-auto">
               <table className="w-full text-xs text-left border-collapse">
                 <thead>
