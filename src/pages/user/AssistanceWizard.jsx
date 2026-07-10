@@ -6,6 +6,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useRequests } from "../../context/RequestContext";
 import { useToast } from "../../context/ToastContext";
 import { useCurrency } from "../../context/CurrencyContext";
+import api from "../../context/api";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import { Input, Textarea } from "../../components/ui/Input";
@@ -133,11 +134,26 @@ export const AssistanceWizard = () => {
   // Active tracking state
   const [activeRequest, setActiveRequest] = useState(null);
 
+  const [garages, setGarages] = useState([]);
+
+  useEffect(() => {
+    const fetchGarages = async () => {
+      try {
+        const res = await api.get("/api/users?role=garage");
+        setGarages(res.data || []);
+      } catch (err) {
+        console.error("Failed to fetch garages", err);
+        try {
+          const users = JSON.parse(localStorage.getItem("vamp-users") || "[]");
+          setGarages(users.filter((u) => u.role === "garage"));
+        } catch (e) {}
+      }
+    };
+    fetchGarages();
+  }, []);
+
   useEffect(() => {
     // Calculate estimated cost strictly based on travel distance to the closest garage
-    const users = JSON.parse(localStorage.getItem("vamp-users") || "[]");
-    const garages = users.filter((u) => u.role === "garage");
-
     let closestGarage = null;
     let minDistance = Infinity;
 
@@ -174,7 +190,7 @@ export const AssistanceWizard = () => {
     setEstimatedDistance(distanceKm);
     setEstimatedRate(rate);
     setEstimatedCost(costInUSD);
-  }, [gpsSim]);
+  }, [gpsSim, garages]);
 
   // Auto-advance to diagnostics step if a category was pre-selected via routing
   useEffect(() => {
@@ -768,7 +784,7 @@ export const AssistanceWizard = () => {
                   size="sm"
                   onClick={() => {
                     if (window.confirm("Cancel this emergency assist request?")) {
-                      updateRequestStatus(activeRequest.id, "cancelled", { eta: "Cancelled", fee: "$0.00", paymentStatus: "none" });
+                      updateRequestStatus(activeRequest.id, "completed", { eta: "Cancelled", fee: "$0.00" });
                       showToast("Emergency signal cancelled.", "info");
                       navigate("/user/dashboard");
                     }

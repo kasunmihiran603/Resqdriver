@@ -7,6 +7,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useRequests } from "../../context/RequestContext";
 import { useToast } from "../../context/ToastContext";
 import { useCurrency } from "../../context/CurrencyContext";
+import api from "../../context/api";
 import { Card, CardHeader, CardTitle, CardContent } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
@@ -148,6 +149,24 @@ export const UserTowingRequest = () => {
   const [estimatedDistance, setEstimatedDistance] = useState(0);
   const [estimatedRate, setEstimatedRate] = useState(200);
 
+  const [towingProviders, setTowingProviders] = useState([]);
+
+  useEffect(() => {
+    const fetchTowing = async () => {
+      try {
+        const res = await api.get("/api/users?role=towing");
+        setTowingProviders(res.data || []);
+      } catch (err) {
+        console.error("Failed to fetch towing providers", err);
+        try {
+          const users = JSON.parse(localStorage.getItem("vamp-users") || "[]");
+          setTowingProviders(users.filter((u) => u.role === "towing"));
+        } catch (e) { }
+      }
+    };
+    fetchTowing();
+  }, []);
+
   useEffect(() => {
     if (!pickup.trim() || !dropoff.trim()) {
       setEstimatedCost(0);
@@ -158,8 +177,6 @@ export const UserTowingRequest = () => {
     // Mock distance in km based on address character lengths
     const distanceKm = Math.max(5, ((pickup.length + dropoff.length) % 20) + 4);
 
-    const users = JSON.parse(localStorage.getItem("vamp-users") || "[]");
-    const towingProviders = users.filter((u) => u.role === "towing");
     const provider = towingProviders[0];
     const rate = provider?.ratePerKM || 200;
 
@@ -169,7 +186,7 @@ export const UserTowingRequest = () => {
     setEstimatedDistance(distanceKm);
     setEstimatedRate(rate);
     setEstimatedCost(costInUSD);
-  }, [pickup, dropoff, vehicleChoice, incidentType]);
+  }, [pickup, dropoff, vehicleChoice, incidentType, towingProviders]);
 
   const handlePickupChange = (newGps) => {
     setPickupGps(newGps);
